@@ -1,6 +1,9 @@
 import Piece from './Piece.js';
 
-
+/**
+ * Initializes the chess board with pieces in their starting positions.
+ * @param {Array} board - The 2D array representing the chess board.
+ */
 function initBoard(board) {
     const piecesList = ['Rook', 'Knight', 'Bishop', 'Queen', 'King', 'Bishop', 'Knight', 'Rook'];
 
@@ -21,6 +24,10 @@ function initBoard(board) {
     }
 }
 
+/**
+ * Updates the HTML representation of the chess board.
+ * @param {Array} board - The 2D array representing the chess board.
+ */
 function updateGridHTML(board) {
     let divGrid = document.getElementById("gameGrid");
     divGrid.innerHTML = "";
@@ -50,6 +57,10 @@ function updateGridHTML(board) {
     }
 }
 
+/**
+ * Adds click event listeners to each square on the chess board to handle piece movement.
+ * @param {Array} board - The 2D array representing the chess board.
+ */
 function updateBoard(board) {
     let lastClick = undefined;
     for (let x = 0; x < board.length; x++) {
