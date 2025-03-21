@@ -20,3 +20,8 @@ app.get("/api/horsesGET", function (req, res) {
     res.send("I Love My GET, And My GET Loves Me");
 });
 
+app.post("/api/getTableHorses", function (req, res) {
+    let table = getHorseTable(req.body);
+    res.json(table);
+});
+
