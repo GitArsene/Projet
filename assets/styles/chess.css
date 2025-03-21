@@ -1,0 +1,40 @@
+main {
+    display: flex;
+}
+
+#gameGrid {
+    border: solid black 3px;
+    transition: transform 1s linear;
+    user-select: none;
+
+    & .row {
+        display: flex;
+
+        & .square {
+            box-sizing: border-box;
+            height: 7vh;
+            width: 7vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: xx-large;
+            cursor: pointer;
+        }
+
+        & .dark {
+            background-color: #b58863;
+        }
+
+        & .light {
+            background-color: #f0d9b5;
+        }
+    }
+}
+
+#promotionScreen {
+    display: none;
+}
+
+#winLoseScreen {
+    display: none;
+}

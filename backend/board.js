@@ -2,7 +2,7 @@ import Piece from './Piece.js';
 
 /**
  * Initializes the chess board with pieces in their starting positions.
- * @param {Array} board - The 2D array representing the chess board.
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
  */
 function initBoard(board) {
     // List of chess pieces for the back row, from left to right
@@ -18,7 +18,7 @@ function initBoard(board) {
                 board[x][y] = new Piece(x, y, "white", 'Pawn'); // White pawns on the 7th row
             } else if (x === 1) {
                 board[x][y] = new Piece(x, y, "black", 'Pawn'); // Black pawns on the 2nd row
-            } 
+            }
             // Set up the other pieces
             else if (x === 7) {
                 board[x][y] = new Piece(x, y, "white", piecesList[y]); // White major pieces on the 8th row
@@ -30,110 +30,164 @@ function initBoard(board) {
 }
 
 /**
- * Updates the HTML representation of the chess board.
- * @param {Array} board - The 2D array representing the chess board.
+ * Moves a piece on the board from one position to another.
+ *
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {Object} from - The starting position of the piece.
+ * @param {number} from.x - The x-coordinate of the starting position.
+ * @param {number} from.y - The y-coordinate of the starting position.
+ * @param {Object} to - The target position of the piece.
+ * @param {number} to.x - The x-coordinate of the target position.
+ * @param {number} to.y - The y-coordinate of the target position.
  */
-function updateGridHTML(board) {
-    // Get the HTML element that will contain the chess grid
-    let divGrid = document.getElementById("gameGrid");
-    // Clear any previous content of the grid to ensure a fresh update
-    divGrid.innerHTML = "";
+function movePiece(board, from, to) {
+    let movingPiece = board[from.x][from.y];
 
-    // Iterate through each row of the board
-    for (let x = 0; x < board.length; x++) {
-        // Create a div element to represent the current row
-        let divRow = document.createElement("div");
-        divRow.setAttribute("class", "row");
+    if (!movingPiece.movementVerification(board, to.x, to.y)) return; // Invalid move
 
-        // Iterate through each square in the row
-        for (let y = 0; y < board.length; y++) {
-            // Create a div element for the current square
-            let divSquare = document.createElement("div");
-            divSquare.setAttribute("id", `${x},${y}`); // Set the id of the square for reference (x,y coordinates)
-            divSquare.setAttribute("class", "square");
-            // If the square is occupied by a piece, display its symbol
-            if (board[x][y] !== undefined) {
-                divSquare.textContent = board[x][y].display();
-            }
-            // Check if the square should be dark or light (alternating colors)
-            if ((x + y) % 2) {
-                divSquare.classList.add("dark");
-            }
-            else {
-                divSquare.classList.add("light");
-            }
-            // Append the square to the current row
-            divRow.appendChild(divSquare);
-        }
-        // Append the row to the grid
-        divGrid.appendChild(divRow);
+    // Handle castling
+    if (movingPiece.type === "King" && movingPiece.castlingVerification(board, to.x, to.y)) {
+        let rookY = to.y < from.y ? 0 : 7; // Determine the rook's column
+        let rook = board[from.x][rookY];
+        let rookNewY = (from.y + to.y) / 2; // New rook position
+
+        // Move the rook
+        rook.setY(rookNewY);
+        rook.setAlreadyMoved();
+        board[to.x][rookNewY] = rook;
+        board[from.x][rookY] = undefined;
     }
+
+    // Create a copy of the board to simulate the move
+    let board_copy = [];
+    for (let i = 0; i < board.length; i++) {
+        board_copy[i] = board[i].slice(); // Deep copy of the board to avoid modifying the original
+    }
+    let movingPiece_copy = Object.assign(Object.create(Object.getPrototypeOf(board_copy[from.x][from.y])), board_copy[from.x][from.y]);
+
+    // Move the selected piece
+    movingPiece_copy.setAlreadyMoved();
+    movingPiece_copy.setX(to.x);
+    movingPiece_copy.setY(to.y);
+    board_copy[to.x][to.y] = movingPiece_copy;
+    board_copy[from.x][from.y] = undefined;
+
+    // Check if the player is in check after the move
+    for (let x = 0; x < board.length; x++) {
+        for (let y = 0; y < board.length; y++) {
+            if (board_copy[x][y] !== undefined && board_copy[x][y].type === "King" && board_copy[x][y].color === movingPiece.color) {
+                if (board_copy[x][y].inCheck(board_copy, x, y)) {
+                    return; // Invalid move
+                }
+            }
+        }
+    }
+
+    // If the move is valid, update the board
+    // Move the selected piece
+    movingPiece.setAlreadyMoved();
+    movingPiece.setX(to.x);
+    movingPiece.setY(to.y);
+    board[to.x][to.y] = movingPiece;
+    board[from.x][from.y] = undefined;
 }
 
 /**
- * Adds click event listeners to each square on the chess board to handle piece movement.
- * @param {Array} board - The 2D array representing the chess board.
+ * Determines if the current board state is a stalemate for the given king's color.
+ * A stalemate occurs when the player whose turn it is has no legal moves but is not in check.
+ *
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {string} kingColor - The color of the king to check for stalemate ("white" or "black").
+ * @returns {boolean} - Returns `true` if it is a stalemate, otherwise `false`.
  */
-function updateBoard(board) {
-    let lastClick = undefined; // Keeps track of the last clicked square
-    // Iterate through each square on the chess board
+function isStalemate(board, kingColor) {
+    let stalemate = true;
+    // Check if any piece of the same color can move
     for (let x = 0; x < board.length; x++) {
         for (let y = 0; y < board.length; y++) {
-            // Get the div element corresponding to the current square
-            let divSquare = document.getElementById(`${x},${y}`);
-            // Add a click event listener to the square
-            divSquare.addEventListener("click", () => {
-                let temp = divSquare.getAttribute("id"); // Get the current square's ID
-                let currentClick = { x: parseInt(temp[0]), y: parseInt(temp[2]) }; // Get the current clicked square's coordinates
-
-                // If there was a previous click (piece was selected previously)
-                if (lastClick !== undefined) {
-                    // If the same square is clicked again, deselect it
-                    if (currentClick.x === lastClick.x && currentClick.y === lastClick.y) {
-                        lastClick = undefined; // Deselect the piece
-                        divSquare.style.border = ""; // Remove the border highlighting
-                    }
-                    else {
-                        // Validate the movement of the piece
-                        if (board[lastClick.x][lastClick.y].movementVerification(board, currentClick.x, currentClick.y)) {
-                            // Move the piece to the new location
-                            board[lastClick.x][lastClick.y].setAlreadyMoved();
-                            board[lastClick.x][lastClick.y].setX(currentClick.x);
-                            board[lastClick.x][lastClick.y].setY(currentClick.y);
-                            board[currentClick.x][currentClick.y] = board[lastClick.x][lastClick.y];
-                            board[lastClick.x][lastClick.y] = undefined
-
-                            lastClick = { x: parseInt(temp[0]), y: parseInt(temp[2]) };
+            let piece = board[x][y];
+            if (piece !== undefined && piece.color === kingColor) {
+                for (let i = 0; i < board.length; i++) {
+                    for (let j = 0; j < board.length; j++) {
+                        if (piece.movementVerification(board, i, j)) {
+                            stalemate = false; // There is a valid move
+                            return stalemate;
                         }
-
-                        // Update the board and re-add event listeners after a valid move
-                        updateGridHTML(board);
-                        updateBoard(board);
                     }
                 }
-                // If no piece has been selected yet
-                else if (board[currentClick.x][currentClick.y] !== undefined) {
-                    // Select the piece and highlight it
-                    lastClick = { x: parseInt(temp[0]), y: parseInt(temp[2]) };
-                    divSquare.style.border = "solid black 2px"; // Highlight the selected piece
+            }
+        }
+    }
 
-                    // Highlight all possible moves for the selected piece
+
+    return stalemate;
+}
+
+/**
+ * Determines if a king of a given color is in checkmate on the chessboard.
+ *
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {string} kingColor - The color of the king to check for checkmate ("white" or "black").
+ * @returns {boolean} - Returns true if the king is in checkmate, otherwise false.
+ */
+function isCheckmate(board, kingColor) {
+    let xk, yk;
+    let checkmate = false;
+
+    // find the king
+    for (let x = 0; x < board.length; x++) {
+        for (let y = 0; y < board.length; y++) {
+            if (board[x][y] !== undefined && board[x][y].type === "King" && board[x][y].color === kingColor) {
+                xk = x;
+                yk = y;
+            }
+        }
+    }
+
+    // Check if the king is in check
+    if (board[xk][yk].inCheck(board, xk, yk)) {
+        checkmate = true;
+        // Check if any piece of the same color can move to block the check or if the king can move out of check
+        for (let x = 0; x < board.length; x++) {
+            for (let y = 0; y < board.length; y++) {
+                let piece = board[x][y];
+                if (piece !== undefined && piece.color === kingColor) {
                     for (let i = 0; i < board.length; i++) {
                         for (let j = 0; j < board.length; j++) {
-                            // If the piece can move to a square, highlight that square
-                            if (board[lastClick.x][lastClick.y].movementVerification(board, i, j)) {
-                                document.getElementById(`${i},${j}`).style.border = "solid red 2px"; // Show possible moves
+                            if (piece.movementVerification(board, i, j)) {
+                                // Simulate the move
+                                let board_copy = [];
+                                for (let k = 0; k < board.length; k++) {
+                                    board_copy[k] = board[k].slice();
+                                }
+                                let piece_copy = Object.assign(Object.create(Object.getPrototypeOf(piece)), piece);
+                                piece_copy.setX(i);
+                                piece_copy.setY(j);
+                                board_copy[i][j] = piece_copy;
+                                board_copy[x][y] = undefined;
+
+                                // Update king's position if the piece is the king
+                                let newXk = xk, newYk = yk;
+                                if (piece.type === "King") {
+                                    newXk = i;
+                                    newYk = j;
+                                }
+
+                                // Check if the king is still in check after the move
+                                if (!board_copy[newXk][newYk].inCheck(board_copy, newXk, newYk)) {
+                                    checkmate = false;
+                                }
                             }
                         }
                     }
                 }
-            });
+            }
         }
     }
+
+    return checkmate;
 }
 
 
-let board = [];
-initBoard(board);
-updateGridHTML(board);
-updateBoard(board);
+
+export { initBoard, movePiece, isStalemate, isCheckmate };

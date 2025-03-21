@@ -56,8 +56,18 @@ export default class Piece {
     }
 
     /**
+     * Promotes the piece to a new type.
+     * @param {string} type - The new type to promote the piece to.
+     */
+    promote(type) {
+        if (this.type === "Pawn" && ((this.color === "white" && this.x === 0) || (this.color === "black" && this.x === 7))) {
+            this.type = type;
+        }
+    }
+
+    /**
      * Verifies if a pawn's movement is valid.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -112,7 +122,7 @@ export default class Piece {
 
     /**
      * Verifies if a bishop's movement is valid.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -144,7 +154,7 @@ export default class Piece {
 
     /**
      * Verifies if a rook's movement is valid.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -176,7 +186,7 @@ export default class Piece {
 
     /**
      * Verifies if a queen's movement is valid.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -190,11 +200,12 @@ export default class Piece {
 
     /**
      * Verifies if a king's movement is valid.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
      */
-    kingMovementVerification(x2, y2) {
+    kingMovementVerification(board, x2, y2) {
         let correct = false;
 
         // The king can move one square in any direction (horizontally, vertically, or diagonally)
@@ -202,12 +213,12 @@ export default class Piece {
             correct = true;
         }
 
-        return correct;
+        return correct || this.castlingVerification(board, x2, y2);
     }
 
     /**
      * Checks if the king is in check after a move.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x - The target x-coordinate.
      * @param {number} y - The target y-coordinate.
      * @returns {boolean} True if the king is in check, false otherwise.
@@ -216,13 +227,15 @@ export default class Piece {
         let check = false;
 
         // Create a copy of the board to simulate the move
-        let board_copy = board.slice();
-        // for (let i = 0; i < board.length; i++) {
-        //     board_copy[i] = board[i].slice(); // Deep copy of the board to avoid modifying the original
-        // }
+        let board_copy = [];
+        for (let i = 0; i < board.length; i++) {
+            board_copy[i] = board[i].slice(); // Deep copy of the board to avoid modifying the original
+        }
 
-        board_copy[x][y] = board_copy[this.x][this.y]; // Move the king to the new position on the copied board
-        board_copy[this.x][this.y] = undefined; // Clear the old position of the king
+        if (x !== this.x || y !== this.y) {
+            board_copy[x][y] = board_copy[this.x][this.y]; // Move the king to the new position on the copied board
+            board_copy[this.x][this.y] = undefined; // Clear the old position of the king
+        }
 
         // Check if any opponent's piece can attack the king's new position
         for (let i = 0; i < board.length; i++) {
@@ -241,8 +254,50 @@ export default class Piece {
     }
 
     /**
+     * Verifies if castling is possible for the current piece.
+     *
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+     * @param {number} x2 - The target x-coordinate for castling.
+     * @param {number} y2 - The target y-coordinate for castling.
+     * @returns {boolean} - Returns true if castling is possible, otherwise false.
+     */
+    castlingVerification(board, x2, y2) {
+        // Castling only happens if the king moves two squares horizontally
+        if (this.x !== x2 || Math.abs(this.y - y2) !== 2) {
+            return false;
+        }
+
+
+        // Determine the direction of the castling move
+        let direction = y2 > this.y ? 1 : -1;
+
+        // Find the corresponding rook based on the direction
+        let rookY = direction === 1 ? 7 : 0;
+        let closestRook = board[this.x][rookY];
+
+        // Check if the rook exists and hasn't moved
+        if (closestRook === undefined || closestRook.type !== "Rook" || closestRook.alreadyMoved) {
+            return false;
+        }
+
+        // Ensure there are no pieces between the king and the rook
+        for (let i = this.y + direction; i !== rookY; i += direction) {
+            if (board[this.x][i] !== undefined) {
+                return false; // Piece is blocking the way
+            }
+        }
+
+        // Ensure the king is not in check and does not pass through check
+        if (this.inCheck(board, this.x, this.y) || this.inCheck(board, this.x, this.y + direction) || this.inCheck(board, this.x, y2)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Verifies if a piece's movement is valid without considering the color.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -268,7 +323,7 @@ export default class Piece {
                 correct = this.queenMovementVerification(board, x2, y2);
                 break;
             case "King":
-                correct = this.kingMovementVerification(x2, y2);
+                correct = this.kingMovementVerification(board, x2, y2);
                 break;
             default:
                 break;
@@ -279,7 +334,7 @@ export default class Piece {
 
     /**
      * Verifies if a piece's movement is valid.
-     * @param {Array<Array<Piece|undefined>>} board - The current state of the board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
      * @param {number} x2 - The target x-coordinate.
      * @param {number} y2 - The target y-coordinate.
      * @returns {boolean} True if the movement is valid, false otherwise.
@@ -345,4 +400,5 @@ export default class Piece {
         }
     }
 }
+
 

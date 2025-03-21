@@ -4,48 +4,25 @@
 <head>
     <meta charset="utf-8" />
     <title> Chess </title>
-    <!--<link rel="stylesheet" href="../assets/styles/chess.css" />-->
-    <script type="module" src="../backend/board.js" defer></script>
-
-    <style>
-        main {
-            display: flex;
-        }
-
-        #gameGrid {
-            border: solid black 3px;
-            transition: transform 1s linear;
-            user-select: none;
-
-            & .row {
-                display: flex;
-
-                & .square {
-                    box-sizing: border-box;
-                    height: 7vh;
-                    width: 7vh;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: xx-large;
-                    cursor: pointer;
-                }
-
-                & .dark {
-                    background-color: #b58863;
-                }
-
-                & .light {
-                    background-color: #f0d9b5;
-                }
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/styles/chess.css" />
+    <script type="module" src="../backend/chess.js" defer></script>
 </head>
 
 <body>
     <main>
         <div id="gameGrid"></div>
+        <div id="promotionScreen">
+            <div id="promotionOptions">
+                <button id="Queen" class="promotionOption">♕</button>
+                <button id="Rook" class="promotionOption">♖</button>
+                <button id="Bishop" class="promotionOption">♗</button>
+                <button id="Knight" class="promotionOption">♘</button>
+            </div>
+        </div>
+        <div id="winLoseScreen">
+            <div id="winLoseText"></div>
+            <button id="playAgain" onclick=play()> Play Again </button>
+        </div>
     </main>
 </body>
 
