@@ -98,8 +98,7 @@ function highlightPossibleMoves(board, x, y) {
  */
 function selectPiece(board, square) {
     // Select the piece and highlight it
-    document.getElementById(`${square.x},${square.y}`).style.border = "solid black 2px"; // Highlight the selected piece
-
+    document.getElementById(`${square.x},${square.y}`).style.border = "solid black 2px";
     // Highlight all possible moves for the selected piece
     highlightPossibleMoves(board, square.x, square.y);
 
@@ -125,8 +124,14 @@ async function handlePlayerClick(board, lastClick, currentClick) {
         }
         else {
             updateGridHTML(board);
-            let opponentColor = board[lastClick.x][lastClick.y].color === "white" ? "black" : "white"
-            movePiece(board, lastClick, currentClick);
+            let movingPiece = board[lastClick.x][lastClick.y];
+            let opponentColor = movingPiece.color === "white" ? "black" : "white"
+
+            // If the move is valid, move the piece and switch players
+            if (movingPiece.movementVerification(board, currentClick.x, currentClick.y) || (movingPiece.type === "King" && movingPiece.castlingVerification(board, currentClick.x, currentClick.y))) {
+                movePiece(board, lastClick, currentClick);
+                currentPlayerColor = currentPlayerColor === "white" ? "black" : "white";
+            }
 
             // check if a pawn has reached the end of the board
             for (let y = 0; y < board.length; y++) {
@@ -155,7 +160,7 @@ async function handlePlayerClick(board, lastClick, currentClick) {
         setUpBoardInteraction(board);
     }
     // If no piece has been selected yet
-    else if (board[currentClick.x][currentClick.y] !== undefined) {
+    else if (board[currentClick.x][currentClick.y] !== undefined && board[currentClick.x][currentClick.y].color === currentPlayerColor) {
         // Select the piece, highlight it and all possible moves it, and set it as the last clicked piece
         lastClick = selectPiece(board, currentClick);
     }
@@ -169,7 +174,7 @@ async function handlePlayerClick(board, lastClick, currentClick) {
  * @param {number} x - The x-coordinate of the pawn to be promoted.
  * @param {number} y - The y-coordinate of the pawn to be promoted.
  */
-async function promotePiece(board,x , y) {
+async function promotePiece(board, x, y) {
     let buttons = document.querySelectorAll("#promotionScreen button");
     let pieceType = null;
 
@@ -184,8 +189,8 @@ async function promotePiece(board,x , y) {
 
     while (pieceType === null) {
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait until a button is clicked
-    } 
-    
+    }
+
     // Remove the event listeners from all buttons after one is clicked
     buttons.forEach(btn => {
         btn.replaceWith(btn.cloneNode(true));
@@ -213,14 +218,17 @@ function play() {
     updateGridHTML(board);
     setUpBoardInteraction(board);
 }
-
-play();
-
 window.play = play;
+
+// Keep track of the last move made
+let lastMove;
+// Set the player color to white
+let currentPlayerColor = "white";
+// Start the game
+play();
 
 
 
 // TODO: en passant
-// TODO: tour par tour
 // TODO: drag and drop
 // TODO: separate frontend and backend
