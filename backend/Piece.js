@@ -91,6 +91,33 @@ export default class Piece {
         else if (Math.abs(this.y - y2) === 1 && isSingleMove && board[x2][y2] !== undefined) {
             correct = true; // Capture is valid only if moving diagonally by one step and an opponent's piece is there
         }
+        // En passant
+        else if (this.EnPassantVerification(board, x2, y2)) {
+            correct = true;
+        }
+
+        return correct;
+    }
+
+    /**
+     * Verifies if an en passant move is valid.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+     * @param {number} x2 - The target x-coordinate.
+     * @param {number} y2 - The target y-coordinate.
+     * @returns {boolean} - Returns true if the en passant move is valid, otherwise false.
+     */
+    EnPassantVerification(board, x2, y2) {
+        let correct = false;
+
+        const isSingleMove = this.color === "white" ? this.x - x2 === 1 : x2 - this.x === 1;
+
+        // Moving diagonally
+        if (Math.abs(this.y - y2) === 1 && isSingleMove && board[x2][y2] === undefined) {
+            // En passant
+            if (window.lastMove !== undefined && window.lastMove.piece.type === "Pawn" && Math.abs(window.lastMove.from.x - window.lastMove.to.x) === 2 && window.lastMove.to.y === y2 && window.lastMove.to.x === this.x) {
+                correct = true; // En passant is valid if the last move was a double step forward by an opponent's pawn
+            }
+        }
 
         return correct;
     }

@@ -83,7 +83,14 @@ function movePiece(board, from, to) {
         }
     }
 
+    // Handle en passant
+    if (movingPiece.type === "Pawn" && movingPiece.EnPassantVerification(board, to.x, to.y)) {
+        board[window.lastMove.to.x][window.lastMove.to.y] = undefined;
+    }
+
     // If the move is valid, update the board
+    // Save the last move
+    window.lastMove = { piece: movingPiece, from: from, to: to };
     // Move the selected piece
     movingPiece.setAlreadyMoved();
     movingPiece.setX(to.x);

@@ -221,7 +221,7 @@ function play() {
 window.play = play;
 
 // Keep track of the last move made
-let lastMove;
+window.lastMove;
 // Set the player color to white
 let currentPlayerColor = "white";
 // Start the game
