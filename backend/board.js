@@ -39,6 +39,7 @@ function initBoard(board) {
  * @param {Object} to - The target position of the piece.
  * @param {number} to.x - The x-coordinate of the target position.
  * @param {number} to.y - The y-coordinate of the target position.
+ * @returns {boolean} - Returns `true` if the move was made, otherwise `false`.
  */
 function movePiece(board, from, to) {
     let movingPiece = board[from.x][from.y];
@@ -77,7 +78,7 @@ function movePiece(board, from, to) {
         for (let y = 0; y < board.length; y++) {
             if (board_copy[x][y] !== undefined && board_copy[x][y].type === "King" && board_copy[x][y].color === movingPiece.color) {
                 if (board_copy[x][y].inCheck(board_copy, x, y)) {
-                    return; // Invalid move
+                    return false; // Invalid move
                 }
             }
         }
@@ -97,6 +98,29 @@ function movePiece(board, from, to) {
     movingPiece.setY(to.y);
     board[to.x][to.y] = movingPiece;
     board[from.x][from.y] = undefined;
+
+    return true;
+}
+
+/**
+ * Finds the position of the king of a given color on the board.
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {string} kingColor - The color of the king to find ("white" or "black").
+ * @returns {Object} - The position of the king on the board.
+ */
+function findKing(board, kingColor) {
+    let xk, yk;
+    // find the king
+    for (let x = 0; x < board.length; x++) {
+        for (let y = 0; y < board.length; y++) {
+            if (board[x][y] !== undefined && board[x][y].type === "King" && board[x][y].color === kingColor) {
+                xk = x;
+                yk = y;
+            }
+        }
+    }
+
+    return { x: xk, y: yk };
 }
 
 /**
@@ -138,18 +162,12 @@ function isStalemate(board, kingColor) {
  * @returns {boolean} - Returns true if the king is in checkmate, otherwise false.
  */
 function isCheckmate(board, kingColor) {
-    let xk, yk;
     let checkmate = false;
 
     // find the king
-    for (let x = 0; x < board.length; x++) {
-        for (let y = 0; y < board.length; y++) {
-            if (board[x][y] !== undefined && board[x][y].type === "King" && board[x][y].color === kingColor) {
-                xk = x;
-                yk = y;
-            }
-        }
-    }
+    let kingPosition = findKing(board, kingColor);
+    let xk = kingPosition.x;
+    let yk = kingPosition.y;
 
     // Check if the king is in check
     if (board[xk][yk].inCheck(board, xk, yk)) {
@@ -194,6 +212,8 @@ function isCheckmate(board, kingColor) {
 
     return checkmate;
 }
+
+
 
 
 

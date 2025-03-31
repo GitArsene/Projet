@@ -383,6 +383,25 @@ export default class Piece {
     }
 
     /**
+     * Gets all possible moves for the piece on the given board.
+     * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+     * @returns {Array<{ x: number, y: number }>} An array of objects representing the possible moves.
+     */
+    getPossibleMoves(board) {
+        let moves = [];
+        
+        for (let x = 0; x < board.length; x++) {
+            for (let y = 0; y < board.length; y++) {
+                if (this.movementVerification(board, x, y)) {
+                    moves.push({ x: x, y: y }); // Add the valid move to the list
+                }
+            }
+        }
+    
+        return moves;
+    }
+
+    /**
      * Displays the piece.
      * @returns {string} The represention of the piece.
      */

@@ -4,7 +4,6 @@ main {
 
 #gameGrid {
     border: solid black 3px;
-    transition: transform 1s linear;
     user-select: none;
 
     & .row {
@@ -18,7 +17,33 @@ main {
             justify-content: center;
             align-items: center;
             font-size: xx-large;
-            cursor: pointer;
+            cursor: grab;
+
+            & .piece {
+                box-sizing: border-box;
+                height: inherit;
+                width: inherit;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: transparent;
+            }
+
+            & .dragging {
+                cursor: grabbing;
+                position: absolute;
+                z-index: 100;
+            }
+
+            & .highlighted {
+                background-color: #006eff33;
+            }
+
+            
+        }
+
+        & .selected {
+            border: solid white 3px;
         }
 
         & .dark {
@@ -27,6 +52,10 @@ main {
 
         & .light {
             background-color: #f0d9b5;
+        }
+
+        & .check {
+            background-color: #f6826c;
         }
     }
 }
@@ -37,4 +66,8 @@ main {
 
 #winLoseScreen {
     display: none;
+}
+
+.active {
+    display: flex !important;
 }
