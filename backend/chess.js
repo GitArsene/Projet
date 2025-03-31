@@ -188,6 +188,7 @@ async function handlePlayerMove(board, lastClick, currentClick) {
             if (movingPiece.movementVerification(board, currentClick.x, currentClick.y)) {
                 if (movePiece(board, lastClick, currentClick)) {
                     currentPlayerColor = opponentColor;
+                    sendMove(lastClick, currentClick); // Send the move to the server
                 }
             }
 
@@ -295,7 +296,7 @@ function play() {
     document.getElementById("promotionScreen").classList.remove("active");
     currentPlayerColor = "white";
 
-    let board = [];
+    //let board = [];
     initBoard(board);
     updateGridHTML(board);
     setUpBoardInteraction(board);
@@ -305,6 +306,7 @@ function play() {
     //handleBotMoves(board, "white");
 }
 
+let board = [];
 window.play = play;
 window.lastMove; // Keep track of the last move made
 let currentPlayerColor; // Keep track of the current player color
@@ -355,3 +357,41 @@ async function handleBotMoves(board, color) {
     handleBotMoves(board, color);
 }
 
+
+
+
+// Exemple de connexion WebSocket côté client
+const ws = new WebSocket('ws://localhost:3000');
+
+// Quand la connexion est ouverte
+ws.onopen = () => {
+    console.log('Connected to the WebSocket server.');
+};
+
+// Quand un message est reçu
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log('Message from server:', data);
+
+    // Exemple : afficher le rôle du joueur
+    if (data.role) {
+        console.log('Your role:', data.role);
+    }
+
+    handlePlayerMove(board, data.from, data.to); // Appeler la fonction pour gérer le mouvement du joueur
+};
+
+// Envoyer un message au serveur
+function sendMessage(message) {
+    ws.send(JSON.stringify({ message }));
+}
+
+// Côté client : envoyer un mouvement
+function sendMove(from, to) {
+    ws.send(JSON.stringify({ type: 'move', from: from, to: to }));
+}
+
+// Gérer la fermeture de la connexion
+ws.onclose = () => {
+    console.log('Disconnected from the WebSocket server.');
+};
