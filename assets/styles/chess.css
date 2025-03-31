@@ -1,5 +1,7 @@
 main {
     display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #gameGrid {
@@ -36,10 +38,8 @@ main {
             }
 
             & .highlighted {
-                background-color: #006eff33;
+                background-color: #0064ff33;
             }
-
-            
         }
 
         & .selected {
@@ -62,10 +62,47 @@ main {
 
 #promotionScreen {
     display: none;
+    flex-direction: column;
+    position: absolute;
+
+    & button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: xx-large;
+        height: 7vh;
+        width: 7vh;
+    }
 }
 
 #winLoseScreen {
     display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 14vh;
+    width: 28vh;
+    font-weight: bold;
+    position: absolute;
+    background-color: rgba(250, 250, 250, 0.7);
+    border-radius: 40px;
+    border: solid black 3px;
+    z-index: 1000;
+
+    & button {
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 5%;
+    }
+
+    & button:hover {
+        cursor: pointer;
+        background-color: #ffffff;
+    }
+
+    & button:active {
+        background-color: #e0e0e0;
+    }
 }
 
 .active {

@@ -202,8 +202,7 @@ async function handlePlayerMove(board, lastClick, currentClick) {
             }
 
             // Check if the game has ended
-            if (isCheckmate(board, opponentColor) || isStalemate(board, opponentColor)) {
-                endgame();
+            if (isEndgame(board, opponentColor)) {
                 updateGridHTML(board);
                 return;
             }
@@ -223,7 +222,12 @@ async function handlePlayerMove(board, lastClick, currentClick) {
  */
 async function promotePiece(board, x, y) {
     // Display the promotion screen
-    document.getElementById("promotionScreen").classList.add("active");
+    let promotionScreen = document.getElementById("promotionScreen");
+    let divSquare = document.getElementById(`${x},${y}`);
+    let rect = divSquare.getBoundingClientRect(); // Get the position of the div
+    promotionScreen.style.left = `${rect.left}px`; // Set the left position of the promotion screen
+    promotionScreen.style.top = `${rect.top}px`; // Set the top position of the promotion screen
+    promotionScreen.classList.add("active");
 
     let buttons = document.querySelectorAll("#promotionScreen button");
     let pieceType = null;
@@ -247,15 +251,39 @@ async function promotePiece(board, x, y) {
     });
 
     // Hide the promotion screen
-    document.getElementById("promotionScreen").classList.remove("active");
+    promotionScreen.classList.remove("active");
 }
 
 /**
  * Displays the endgame screen by setting the "winLoseScreen" element's display style to "flex".
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {string} opponentColor - The color of the opponent's pieces.
+ * @return {boolean} - Returns true if the game is over (checkmate or stalemate), false otherwise.
  */
-function endgame() {
+function isEndgame(board, opponentColor) {
+    if (isCheckmate(board, opponentColor)) {
+        // Check if the game is over due to checkmate
+        let winLoseText = document.getElementById("winLoseText");
+        let winner = opponentColor === "white" ? "Black" : "White"; // Determine the winner based on the current player color
+        winLoseText.textContent = `${winner} wins!`;
+    }
+    else if (isStalemate(board, opponentColor)) {
+        let winLoseText = document.getElementById("winLoseText");
+        winLoseText.textContent = "Draw!";
+    }
+    else {
+        return false; // Game continues
+    }
+
     let winLoseScreen = document.getElementById("winLoseScreen");
     winLoseScreen.classList.add("active"); // Show the endgame screen
+
+    document.getElementById("gameGrid").addEventListener("click", () => {
+        winLoseScreen.classList.remove("active"); // Hide the endgame screen on click 
+        document.getElementById("gameGrid").replaceWith(document.cloneNode(true)); // Clone the document to remove the event listeners
+    });
+
+    return true; // Game is over
 }
 
 /**
@@ -284,7 +312,6 @@ play(); // Start the game
 
 
 
-// TODO: separate frontend and backend code
 // TODO: websocket communication for multiplayer
 // TODO: SCOOBY DOO BE DOO WHERE ARE YOU ? 
 
@@ -293,8 +320,8 @@ play(); // Start the game
 async function handleBotMoves(board, color) {
     let opponentColor = color === "white" ? "black" : "white";
 
-    if (isCheckmate(board, color) || isStalemate(board, color) || isCheckmate(board, color) || isStalemate(board, opponentColor)) {
-        endgame();
+    if (isCheckmate(board, currentPlayerColor) || isStalemate(board, currentPlayerColor)) {
+        isEndgame();
         updateGridHTML(board);
         return;
     }
@@ -304,59 +331,24 @@ async function handleBotMoves(board, color) {
     }
 
     let pieces = board.flat().filter(piece => piece !== undefined && piece.color === color);
-    let randomPiece = pieces[Math.floor(Math.random() * pieces.length)];
-    let lastClickbot = { x: randomPiece.x, y: randomPiece.y }; // Get the last clicked square's coordinates
-
-    // let possibleMoves = [];
-    // pieces.forEach(piece => {
-    //     for (let i = 0; i < board.length; i++) {
-    //         for (let j = 0; j < board.length; j++) {
-    //             if (piece.movementVerification(board, i, j)) {
-    //                 possibleMoves.push({ from: { x: piece.x, y: piece.y }, to: { x: i, y: j } });
-    //             }
-    //         }
-    //     }
-    // });
-
-    // // Assign values to pieces based on their type
-    // const pieceValues = {
-    //     "Pawn": 1,
-    //     "Knight": 3,
-    //     "Bishop": 3,
-    //     "Rook": 5,
-    //     "Queen": 9,
-    //     "King": Infinity // King has the highest value, but it cannot be captured
-    // };
-
-    // let maxValue = -Infinity;
-    // let bestMove = null;
-    // possibleMoves.forEach(move => {
-
-    //     // Evaluate the value of the move based on the piece being captured
-    //     let targetPiece = board[move.to.x][move.to.y];
-    //     let value = targetPiece ? pieceValues[targetPiece.type] : 0;
-    //     if (value > maxValue) {
-    //         maxValue = value;
-    //         bestMove = move;
-    //     }
-    // });
-
-    // await handlePlayerMove(board, bestMove.from, bestMove.to);
 
     let possibleMoves = [];
-    for (let i = 0; i < board.length; i++) {
-        for (let j = 0; j < board.length; j++) {
-            if (board[randomPiece.x][randomPiece.y].movementVerification(board, i, j)) {
-                possibleMoves.push({ x: i, y: j });
+    pieces.forEach(piece => {
+        for (let i = 0; i < board.length; i++) {
+            for (let j = 0; j < board.length; j++) {
+                if (board[piece.x][piece.y].movementVerification(board, i, j)) {
+                    possibleMoves.push({ from: { x: piece.x, y: piece.y }, to: { x: i, y: j } });
+                }
             }
         }
-    }
+    });
+
 
     if (possibleMoves.length > 0) {
         let randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
-
-        let currentClickbot = { x: randomMove.x, y: randomMove.y }; // Get the current clicked square's coordinates
+        let lastClickbot = { x: randomMove.from.x, y: randomMove.from.y }; // Get the last clicked square's coordinates
+        let currentClickbot = { x: randomMove.to.x, y: randomMove.to.y }; // Get the current clicked square's coordinates
         await handlePlayerMove(board, lastClickbot, currentClickbot);
     }
 
