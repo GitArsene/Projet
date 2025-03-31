@@ -40,6 +40,13 @@ document.addEventListener("DOMContentLoaded", async function () {
       else if (i == tableInstance.length/4 - 1 && j != 0) cell.className = "yellow";
       else if (j == 0) cell.className = "blue";
       else if (j === tableInstance.length/4 - 1) cell.className = "green";
+      else {
+        if(i == j && i <= tableInstance.length/8 - 1) cell.className = "red-c";
+        else if(i == j && i >= tableInstance.length/8) cell.className = "yellow-c";
+        else if(i == parseInt(tableInstance.length/4 - 1) - j && i <= tableInstance.length/8 - 1) cell.className = "green-c";
+        else if(i == parseInt(tableInstance.length/4 - 1) - j && i >= tableInstance.length/8) cell.className = "blue-c";
+        else if(i == j) cell.className = "end-c";
+      }
       cell.classList.add("cell");
       row.appendChild(cell);
     }
@@ -51,6 +58,11 @@ document.addEventListener("DOMContentLoaded", async function () {
   let yellowCells = document.querySelectorAll(".yellow");
   let blueCells = document.querySelectorAll(".blue");
   let greenCells = document.querySelectorAll(".green");
+  let redCellsC = document.querySelectorAll(".red-c");
+  let yellowCellsC = document.querySelectorAll(".yellow-c");
+  let blueCellsC = document.querySelectorAll(".blue-c");
+  let greenCellsC = document.querySelectorAll(".green-c");
+  let endCells = document.querySelectorAll(".end-c");
   // Iterate through red cells
   let count = 0;
   Array.from(redCells).forEach((cell) => {
@@ -75,5 +87,40 @@ document.addEventListener("DOMContentLoaded", async function () {
     cell.id = count; // Assign unique ID
     cell.innerHTML = count; // Assign value
     count++;
+  });
+
+  let centerCount = 0;
+  Array.from(redCellsC).forEach((cell) => {
+    cell.id = centerCount + "R"; // Assign unique ID
+    cell.innerHTML = centerCount + "R"; // Assign value
+    centerCount++;
+  });
+
+  centerCount = 0;
+  Array.from(greenCellsC).forEach((cell) => {
+    cell.id = centerCount + "G"; // Assign unique ID
+    cell.innerHTML = centerCount + "G"; // Assign value
+    centerCount++;
+  });
+
+  centerCount = 0;
+  Array.from(yellowCellsC).reverse().forEach((cell) => {
+    cell.id = centerCount + "Y"; // Assign unique ID
+    cell.innerHTML = centerCount + "Y"; // Assign value
+    centerCount++;
+  });
+
+  centerCount = 0;
+  Array.from(blueCellsC).reverse().forEach((cell) => {
+    cell.id = centerCount + "B"; // Assign unique ID
+    cell.innerHTML = centerCount + "B"; // Assign value
+    centerCount++;
+  });
+
+  centerCount = 0;
+  Array.from(endCells).forEach((cell) => {
+    cell.id = centerCount + "E"; // Assign unique ID
+    cell.innerHTML = centerCount + "E"; // Assign value
+    centerCount++;
   });
 });
