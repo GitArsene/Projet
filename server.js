@@ -1,5 +1,5 @@
 const express = require('express');
-const http = require('http'); // Nécessaire pour créer un serveur HTTP
+const http = require('http');
 const WebSocket = require('ws');
 
 const app = express();
@@ -22,22 +22,14 @@ let players = [];
 // Gérer les connexions WebSocket
 wss.on('connection', (ws) => {
     console.log('A client connected.');
+    if (players.length >= 2) {
+        ws.close(1008, 'Game is full'); // Code 1008: Policy Violation
+        console.log('Connection rejected: Game is full.');
+        return;
+    }
     players.push(ws);
 
-    // Gérer les messages reçus
-    // ws.on('message', (message) => {
-    //     console.log('Received:', message);
-
-    //     // Diffuser le message à tous les clients connectés
-    //     wss.clients.forEach((client) => {
-    //         if (client.readyState === WebSocket.OPEN) {
-    //             client.send(message);
-    //         }
-    //     });
-    // });
-
     ws.on('message', (message) => {
-        console.log('Received:', message);
         const data = JSON.parse(message);
         console.log('Parsed data:', data);
     
@@ -45,7 +37,6 @@ wss.on('connection', (ws) => {
             players.forEach((player) => {
                 if (player !== ws && player.readyState === WebSocket.OPEN) {
                     console.log('Sending move to player:', player);
-                    console.log('Data to send:', JSON.stringify(data));
                     player.send(JSON.stringify(data));
                 }
             });
@@ -54,6 +45,7 @@ wss.on('connection', (ws) => {
 
     // Gérer la déconnexion
     ws.on('close', () => {
+        players.pop(ws); // Retire le joueur de la liste
         console.log('A client disconnected.');
     });
 });

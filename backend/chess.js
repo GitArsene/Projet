@@ -1,4 +1,5 @@
 import { initBoard, movePiece, isStalemate, isCheckmate } from "./board.js";
+import { sendMove } from "./client.js";
 
 /**
  * Updates the HTML representation of the chess board.
@@ -172,47 +173,65 @@ function unselectPiece(board) {
  * Handles the logic for when a player clicks on a square on the chessboard.
  *
  * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
- * @param {Object|undefined} lastClick - The coordinates of the last clicked square, or undefined if no square was previously selected.
- * @param {Object} currentClick - The coordinates of the currently clicked square.
+ * @param {Object|undefined} from - The coordinates of the last clicked square, or undefined if no square was previously selected.
+ * @param {Object} to - The coordinates of the currently clicked square.
  */
-async function handlePlayerMove(board, lastClick, currentClick) {
+async function handlePlayerMove(board, from, to) {
     // If there was a previous click (piece was selected previously)
-    if (lastClick !== undefined) {
+    if (from !== undefined) {
         // If the clicked square is different from the last clicked square
-        if (currentClick.x !== lastClick.x || currentClick.y !== lastClick.y) {
-            updateGridHTML(board);
-            let movingPiece = board[lastClick.x][lastClick.y];
+        if (to.x !== from.x || to.y !== from.y) {
+            updateGridHTML(board); // Update the board to remove event listeners
+            let movingPiece = board[from.x][from.y];
             let opponentColor = movingPiece.color === "white" ? "black" : "white";
+            let promoted = false; // Flag to check if a pawn was promoted
 
-            // If the move is valid, move the piece and switch players
-            if (movingPiece.movementVerification(board, currentClick.x, currentClick.y)) {
-                if (movePiece(board, lastClick, currentClick)) {
+            // If the move is valid, move the piece, promote pawn and switch players
+            if (movingPiece.movementVerification(board, to.x, to.y)) {
+                if (movePiece(board, from, to)) {
+                    // check if a pawn has reached the end of the board
+                    let xTarget = currentPlayerColor === "white" ? 0 : 7;
+                    if (movingPiece.x === xTarget && movingPiece.type === "Pawn") {
+                        await promotePiece(board, to.x, to.y); // Promote the pawn
+                        promoted = true; // Set the flag to true if a pawn was promoted
+                    }
+
                     currentPlayerColor = opponentColor;
-                    sendMove(lastClick, currentClick); // Send the move to the server
+
+                    sendMove(movingPiece, from, to, promoted); // Send the move to the server
                 }
             }
 
-            // check if a pawn has reached the end of the board
-            for (let y = 0; y < board.length; y++) {
-                let x = opponentColor === "white" ? 7 : 0;
-                if ((board[x][y] !== undefined && board[x][y].type === "Pawn")) {
-                    // Promote the pawn
-                    await promotePiece(board, x, y);
-                    break;
-                }
-            }
-
-            // Check if the game has ended
-            if (isEndgame(board, opponentColor)) {
-                updateGridHTML(board);
-                return;
-            }
-
-            // Update the board and re-add event listeners
-            updateGridHTML(board);
-            setUpBoardInteraction(board);
+            updateBoardAndCheckEndgame(board, opponentColor); // Update the board and check for endgame conditions
         }
     }
+}
+
+/**
+ * Handles the logic for when an opponent makes a move on the chessboard.
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {Object} from - The coordinates of the last clicked square.
+ * @param {Object} to - The coordinates of the currently clicked square.
+ * @param {boolean} promoted - Flag to check if a pawn was promoted.
+ * @param {string} pieceType - The type of the piece that was moved.
+ */
+function handleOpponentMove(board, from, to, promoted, pieceType) {
+    let movingPiece = board[from.x][from.y];
+    let playerColor = movingPiece.color === "white" ? "black" : "white";
+
+    // If the move is valid, move the piece and switch players
+    if (movingPiece.movementVerification(board, to.x, to.y)) {
+        if (movePiece(board, from, to)) {
+
+            if (promoted) {
+                movingPiece.promote(pieceType);
+            }
+
+            currentPlayerColor = playerColor;
+        }
+    }
+
+    updateBoardAndCheckEndgame(board, playerColor); // Update the board and check for endgame conditions
 }
 
 /**
@@ -258,17 +277,17 @@ async function promotePiece(board, x, y) {
 /**
  * Displays the endgame screen by setting the "winLoseScreen" element's display style to "flex".
  * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
- * @param {string} opponentColor - The color of the opponent's pieces.
+ * @param {string} color - The color to check for endgame conditions.
  * @return {boolean} - Returns true if the game is over (checkmate or stalemate), false otherwise.
  */
-function isEndgame(board, opponentColor) {
-    if (isCheckmate(board, opponentColor)) {
+function isEndgame(board, color) {
+    if (isCheckmate(board, color)) {
         // Check if the game is over due to checkmate
         let winLoseText = document.getElementById("winLoseText");
-        let winner = opponentColor === "white" ? "Black" : "White"; // Determine the winner based on the current player color
+        let winner = color === "white" ? "Black" : "White"; // Determine the winner based on the current player color
         winLoseText.textContent = `${winner} wins!`;
     }
-    else if (isStalemate(board, opponentColor)) {
+    else if (isStalemate(board, color)) {
         let winLoseText = document.getElementById("winLoseText");
         winLoseText.textContent = "Draw!";
     }
@@ -288,6 +307,19 @@ function isEndgame(board, opponentColor) {
 }
 
 /**
+ * Updates the chess board and checks if the game has ended.
+ * @param {Array<Array<Piece|undefined>>} board - The 2D array representing the chess board.
+ * @param {string} color - The color to check for endgame conditions.
+ */
+function updateBoardAndCheckEndgame(board, color) {
+    updateGridHTML(board); // Update the board
+    // Check if the game has ended
+    if (!isEndgame(board, color)) {
+        setUpBoardInteraction(board); // If not, re-add event listeners
+    }
+}
+
+/**
  * Initializes and starts the chess game by setting up the board, 
  * hiding unnecessary screens, and enabling board interactions.
  */
@@ -296,14 +328,9 @@ function play() {
     document.getElementById("promotionScreen").classList.remove("active");
     currentPlayerColor = "white";
 
-    //let board = [];
     initBoard(board);
     updateGridHTML(board);
     setUpBoardInteraction(board);
-
-    // Start bot moves
-    //handleBotMoves(board, "black");
-    //handleBotMoves(board, "white");
 }
 
 let board = [];
@@ -312,86 +339,6 @@ window.lastMove; // Keep track of the last move made
 let currentPlayerColor; // Keep track of the current player color
 play(); // Start the game
 
+export { handleOpponentMove, board };
 
 
-// TODO: websocket communication for multiplayer
-// TODO: SCOOBY DOO BE DOO WHERE ARE YOU ? 
-
-
-// Function to handle bot moves asynchronously
-async function handleBotMoves(board, color) {
-    let opponentColor = color === "white" ? "black" : "white";
-
-    if (isCheckmate(board, currentPlayerColor) || isStalemate(board, currentPlayerColor)) {
-        isEndgame();
-        updateGridHTML(board);
-        return;
-    }
-
-    while (currentPlayerColor !== color) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Wait until a button is clicked
-    }
-
-    let pieces = board.flat().filter(piece => piece !== undefined && piece.color === color);
-
-    let possibleMoves = [];
-    pieces.forEach(piece => {
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board.length; j++) {
-                if (board[piece.x][piece.y].movementVerification(board, i, j)) {
-                    possibleMoves.push({ from: { x: piece.x, y: piece.y }, to: { x: i, y: j } });
-                }
-            }
-        }
-    });
-
-
-    if (possibleMoves.length > 0) {
-        let randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-
-        let lastClickbot = { x: randomMove.from.x, y: randomMove.from.y }; // Get the last clicked square's coordinates
-        let currentClickbot = { x: randomMove.to.x, y: randomMove.to.y }; // Get the current clicked square's coordinates
-        await handlePlayerMove(board, lastClickbot, currentClickbot);
-    }
-
-    handleBotMoves(board, color);
-}
-
-
-
-
-// Exemple de connexion WebSocket côté client
-const ws = new WebSocket('ws://localhost:3000');
-
-// Quand la connexion est ouverte
-ws.onopen = () => {
-    console.log('Connected to the WebSocket server.');
-};
-
-// Quand un message est reçu
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log('Message from server:', data);
-
-    // Exemple : afficher le rôle du joueur
-    if (data.role) {
-        console.log('Your role:', data.role);
-    }
-
-    handlePlayerMove(board, data.from, data.to); // Appeler la fonction pour gérer le mouvement du joueur
-};
-
-// Envoyer un message au serveur
-function sendMessage(message) {
-    ws.send(JSON.stringify({ message }));
-}
-
-// Côté client : envoyer un mouvement
-function sendMove(from, to) {
-    ws.send(JSON.stringify({ type: 'move', from: from, to: to }));
-}
-
-// Gérer la fermeture de la connexion
-ws.onclose = () => {
-    console.log('Disconnected from the WebSocket server.');
-};
