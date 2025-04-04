@@ -17,26 +17,40 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-let players = [];
+
+const rooms = {}; // { roomId: [player1, player2] }
 
 // Gérer les connexions WebSocket
 wss.on('connection', (ws) => {
-    console.log('A client connected.');
-    if (players.length >= 2) {
-        ws.close(1008, 'Game is full'); // Code 1008: Policy Violation
-        console.log('Connection rejected: Game is full.');
-        return;
-    }
-    players.push(ws);
+    let roomId;
 
     ws.on('message', (message) => {
         const data = JSON.parse(message);
         console.log('Parsed data:', data);
-    
-        if (data.type === 'move') {
-            players.forEach((player) => {
+
+        if (data.type === 'join') {
+            roomId = data.roomId;
+            console.log('Player joined room:', roomId);
+
+            if (!rooms[roomId]) {
+                rooms[roomId] = [];
+            }
+
+            if (rooms[roomId].length < 2) {
+                rooms[roomId].push(ws);
+                ws.roomId = roomId;
+                ws.playerColor = rooms[roomId].length === 1 ? 'white' : 'black'; // Assign colors based on player order
+                ws.send(JSON.stringify({ type: 'joined', color: ws.playerColor })); // Send the assigned color to the player
+            }
+            else {
+                ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+            }
+        }
+
+
+        if (data.type === 'move' && rooms[roomId].length === 2) {
+            rooms[roomId].forEach((player) => {
                 if (player !== ws && player.readyState === WebSocket.OPEN) {
-                    console.log('Sending move to player:', player);
                     player.send(JSON.stringify(data));
                 }
             });
@@ -45,8 +59,8 @@ wss.on('connection', (ws) => {
 
     // Gérer la déconnexion
     ws.on('close', () => {
-        players.pop(ws); // Retire le joueur de la liste
-        console.log('A client disconnected.');
+        rooms[roomId].pop(ws); // Retire le joueur de la liste
+        console.log('A player disconnected.');
     });
 });
 

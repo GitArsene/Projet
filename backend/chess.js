@@ -1,5 +1,5 @@
 import { initBoard, movePiece, isStalemate, isCheckmate } from "./board.js";
-import { sendMove } from "./client.js";
+import { sendMove, playerColor, board } from "./client.js";
 
 /**
  * Updates the HTML representation of the chess board.
@@ -11,14 +11,18 @@ function updateGridHTML(board) {
     // Clear any previous content of the grid to ensure a fresh update
     divGrid.innerHTML = "";
 
+    const start = playerColor === 'white' ? 0 : board.length - 1; // Determine the starting index based on the player's color
+    const end = playerColor === 'white' ? board.length : -1; // Determine the ending index based on the player's color
+    const step = playerColor === 'white' ? 1 : -1; // Determine the step size based on the player's color
+
     // Iterate through each row of the board
-    for (let x = 0; x < board.length; x++) {
+    for (let x = start; x !== end; x += step) {
         // Create a div element to represent the current row
         let divRow = document.createElement("div");
         divRow.classList.add("row");
 
         // Iterate through each square in the row
-        for (let y = 0; y < board.length; y++) {
+        for (let y = start; y !== end; y += step) {
             // Create a div element for the current square
             let divSquare = document.createElement("div");
             divSquare.setAttribute("id", `${x},${y}`); // Set the id of the square for reference (x,y coordinates)
@@ -71,7 +75,7 @@ function setUpBoardInteraction(board) {
             let times = 0; // Counter for mouse clicks
 
             // Add a mousedown event to start dragging
-            if (board[x][y] !== undefined && board[x][y].color === currentPlayerColor) {
+            if (board[x][y] !== undefined && board[x][y].color === currentPlayerColor && currentPlayerColor === playerColor) {
                 divSquare.addEventListener("mousedown", () => {
                     isDragging = true;
                     unselectPiece(board); // Unselect the piece and remove highlights
@@ -217,7 +221,6 @@ async function handlePlayerMove(board, from, to) {
  */
 function handleOpponentMove(board, from, to, promoted, pieceType) {
     let movingPiece = board[from.x][from.y];
-    let playerColor = movingPiece.color === "white" ? "black" : "white";
 
     // If the move is valid, move the piece and switch players
     if (movingPiece.movementVerification(board, to.x, to.y)) {
@@ -280,7 +283,7 @@ async function promotePiece(board, x, y) {
  * @param {string} color - The color to check for endgame conditions.
  * @return {boolean} - Returns true if the game is over (checkmate or stalemate), false otherwise.
  */
-function isEndgame(board, color) {
+function endgame(board, color) {
     if (isCheckmate(board, color)) {
         // Check if the game is over due to checkmate
         let winLoseText = document.getElementById("winLoseText");
@@ -314,7 +317,7 @@ function isEndgame(board, color) {
 function updateBoardAndCheckEndgame(board, color) {
     updateGridHTML(board); // Update the board
     // Check if the game has ended
-    if (!isEndgame(board, color)) {
+    if (!endgame(board, color)) {
         setUpBoardInteraction(board); // If not, re-add event listeners
     }
 }
@@ -333,12 +336,10 @@ function play() {
     setUpBoardInteraction(board);
 }
 
-let board = [];
 window.play = play;
 window.lastMove; // Keep track of the last move made
 let currentPlayerColor; // Keep track of the current player color
-play(); // Start the game
 
-export { handleOpponentMove, board };
+export { play, handleOpponentMove };
 
 
