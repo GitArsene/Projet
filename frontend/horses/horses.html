@@ -10,12 +10,16 @@
   <body>
     <h1>Les petits chevaux</h1>
     <h2 id="player"></h2>
-    <button onclick="diceRoll()">Lancer le dés</button>
+    <div class="dice-container">
+      <div id="dice">1</div>
+      <button class="simple-button" class="roll-button" onclick="diceRoll()">
+        Lancer le dé
+      </button>
+    </div>
     <span id="dice"></span>
-
-    <table id="table">
-      
-    </table>
+    <div class ="game-container">
+      <table id="table"></table>
+    </div>
   </body>
   <script type="module" src="../assets/js/horses.js"></script>
 </html>

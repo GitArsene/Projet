@@ -5,4 +5,7 @@ function getHorseTable(){
     return table;
 }
 
+
+
+
 export { getHorseTable };
