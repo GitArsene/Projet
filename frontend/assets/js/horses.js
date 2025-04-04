@@ -1,14 +1,16 @@
+import { getHorseTable } from "../../../backend/horses.js";
+
 let players = ["red", "yellow", "blue", "green"];
 let current = 0;
 
-function setPlayer(){
+function setPlayer() {
   let playerText = document.getElementById("player");
   playerText.innerHTML = players[current];
 }
 
 setPlayer();
 
-function diceRoll(){
+function diceRoll() {
   let randomNumber = Math.floor(Math.random() * 6) + 1;
   let dice = document.getElementById("dice");
   dice.innerHTML = randomNumber;
@@ -22,105 +24,89 @@ function diceRoll(){
   return randomNumber;
 }
 
-async function initHorsesTableInstance() {
-  const response = await fetch("http://localhost:3000/api/getTableHorses");
-  const data = await response.json();
+function initHorsesTableInstance() {
+  const response = getHorseTable(); // Appel de la fonction getHorseTable
 
-  return data;
+  return response;
 }
 
-document.addEventListener("DOMContentLoaded", async function () {
-  let tableInstance = await initHorsesTableInstance();
+document.addEventListener("DOMContentLoaded", function () {
+  let tableInstance = initHorsesTableInstance();
   let table = document.getElementById("table");
-  for (let i = 0; i < tableInstance.length / 4; i++) {
+  let boardSize = tableInstance.length / 4;
+  let board = Array.from({ length: boardSize }, () =>
+    Array(boardSize).fill(null)
+  );
+  let center = Math.floor(boardSize / 2);
+  let padding = 1; // Ajoutons un espace autour du "+"
+
+  for (let i = 0; i < boardSize; i++) {
     let row = document.createElement("tr");
-    for (let j = 0; j < tableInstance.length / 4; j++) {
+    for (let j = 0; j < boardSize; j++) {
       let cell = document.createElement("td");
-      if (i == 0 && j != tableInstance.length/4 - 1) cell.className = "red";
-      else if (i == tableInstance.length/4 - 1 && j != 0) cell.className = "yellow";
-      else if (j == 0) cell.className = "blue";
-      else if (j === tableInstance.length/4 - 1) cell.className = "green";
-      else {
-        if(i == j && i <= tableInstance.length/8 - 1) cell.className = "red-c";
-        else if(i == j && i >= tableInstance.length/8) cell.className = "yellow-c";
-        else if(i == parseInt(tableInstance.length/4 - 1) - j && i <= tableInstance.length/8 - 1) cell.className = "green-c";
-        else if(i == parseInt(tableInstance.length/4 - 1) - j && i >= tableInstance.length/8) cell.className = "blue-c";
-        else if(i == j) cell.className = "end-c";
+
+      // Contour extérieur de "plus" sans toucher le bord
+      if (
+        // Haut et bas du "+"
+        (i === center - padding && j < boardSize) ||
+        (i === center + padding && j < boardSize) ||
+        // Gauche et droite du "+"
+        (j === center - padding && i < boardSize) ||
+        (j === center + padding && i < boardSize)
+      ) {
+        cell.className = "path"; // Classe pour la zone de contour du "+"
       }
+      // // Zone centrale du "+"
+      // else if (i === center || j === center) {
+      //   cell.className = "center"; // Zone centrale
+      // }
+      // // Zone vide autour du "+"
+      // else {
+      //   cell.className = "center-empty"; // Vide autour du "+"
+      // }
+
       cell.classList.add("cell");
       row.appendChild(cell);
+      board[i][j] = cell; // Stockage dans le tableau 2D
     }
     table.appendChild(row);
   }
 
-  // Iterate through colors
-  let redCells = document.querySelectorAll(".red");
-  let yellowCells = document.querySelectorAll(".yellow");
-  let blueCells = document.querySelectorAll(".blue");
-  let greenCells = document.querySelectorAll(".green");
-  let redCellsC = document.querySelectorAll(".red-c");
-  let yellowCellsC = document.querySelectorAll(".yellow-c");
-  let blueCellsC = document.querySelectorAll(".blue-c");
-  let greenCellsC = document.querySelectorAll(".green-c");
-  let endCells = document.querySelectorAll(".end-c");
-  // Iterate through red cells
-  let count = 0;
-  Array.from(redCells).forEach((cell) => {
-    cell.id = count; // Assign unique ID
-    cell.innerHTML = count; // Assign value
-    count++;
-  });
-
-  Array.from(greenCells).forEach((cell) => {
-    cell.id = count; // Assign unique ID
-    cell.innerHTML = count; // Assign value
-    count++;
-  });
-
-  Array.from(yellowCells).reverse().forEach((cell) => {
-    cell.id = count; // Assign unique ID
-    cell.innerHTML = count; // Assign value
-    count++;
-  });
-
-  Array.from(blueCells).reverse().forEach((cell) => {
-    cell.id = count; // Assign unique ID
-    cell.innerHTML = count; // Assign value
-    count++;
-  });
-
-  let centerCount = 0;
-  Array.from(redCellsC).forEach((cell) => {
-    cell.id = centerCount + "R"; // Assign unique ID
-    cell.innerHTML = centerCount + "R"; // Assign value
-    centerCount++;
-  });
-
-  centerCount = 0;
-  Array.from(greenCellsC).forEach((cell) => {
-    cell.id = centerCount + "G"; // Assign unique ID
-    cell.innerHTML = centerCount + "G"; // Assign value
-    centerCount++;
-  });
-
-  centerCount = 0;
-  Array.from(yellowCellsC).reverse().forEach((cell) => {
-    cell.id = centerCount + "Y"; // Assign unique ID
-    cell.innerHTML = centerCount + "Y"; // Assign value
-    centerCount++;
-  });
-
-  centerCount = 0;
-  Array.from(blueCellsC).reverse().forEach((cell) => {
-    cell.id = centerCount + "B"; // Assign unique ID
-    cell.innerHTML = centerCount + "B"; // Assign value
-    centerCount++;
-  });
-
-  centerCount = 0;
-  Array.from(endCells).forEach((cell) => {
-    cell.id = centerCount + "E"; // Assign unique ID
-    cell.innerHTML = centerCount + "E"; // Assign value
-    centerCount++;
-  });
+  console.log(board); // Vérification de la structure du plateau
 });
+
+// Assignation des couleurs aux différentes zones
+let redCells = document.querySelectorAll(".red");
+let yellowCells = document.querySelectorAll(".yellow");
+let blueCells = document.querySelectorAll(".blue");
+let greenCells = document.querySelectorAll(".green");
+
+// Assignation des IDs aux cellules des différentes couleurs
+let count = 0;
+Array.from(redCells).forEach((cell) => {
+  cell.id = count; // Assignation d'un ID unique
+  cell.innerHTML = count; // Assignation d'une valeur
+  count++;
+});
+
+Array.from(greenCells).forEach((cell) => {
+  cell.id = count;
+  cell.innerHTML = count;
+  count++;
+});
+
+Array.from(yellowCells)
+  .reverse()
+  .forEach((cell) => {
+    cell.id = count;
+    cell.innerHTML = count;
+    count++;
+  });
+
+Array.from(blueCells)
+  .reverse()
+  .forEach((cell) => {
+    cell.id = count;
+    cell.innerHTML = count;
+    count++;
+  });

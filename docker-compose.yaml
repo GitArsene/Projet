@@ -1,20 +1,9 @@
 services:
   frontend:
     image: nginx:latest
-    container_name: web-project-frontend
+    container_name: web-project
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./frontend:/usr/share/nginx/html
+      - .:/usr/share/nginx/html
     ports:
       - "80:80"
-
-  backend:
-    build: .
-    container_name: web-project-backend
-    volumes:
-      - ./backend:/webapp-backend  # On monte le code du backend pour voir les modifications en direct
-    ports:
-      - "3000:3000"
-    restart: always
-
-# Add database and dependencies later

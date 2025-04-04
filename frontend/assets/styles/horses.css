@@ -1,42 +1,24 @@
-.green{
-    background-color: green;
+.cell {
+  width: 40px;
+  height: 40px;
+  border: 1px solid black;
+  text-align: center;
+  vertical-align: middle;
 }
 
-.red{
-    background-color: red;
+.path {
+  background-color: gray;
 }
 
-.blue{
-    background-color: blue;
+.center {
+  background-color: lightblue;
 }
 
-.yellow{
-    background-color: yellow;
+.center-empty {
+  background-color: white;
 }
 
-.green-c {
-    background-color: green;
-}
-
-.red-c {
-    background-color: red;
-}
-
-.blue-c {
-    background-color: blue;
-}
-
-.yellow-c {
-    background-color: yellow;
-}
-
-.end-c {
-    background-color: black;
-}
-
-.cell{
-    width: 50px;
-    height: 50px;
-    display: inline-block;
-    margin: 1px;
-}
+.red { background-color: red; }
+.yellow { background-color: yellow; }
+.blue { background-color: blue; }
+.green { background-color: green; }

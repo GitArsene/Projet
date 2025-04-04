@@ -5,6 +5,4 @@ function getHorseTable(){
     return table;
 }
 
-module.exports = { // Exporting the function
-    getHorseTable
-};
+export { getHorseTable };
