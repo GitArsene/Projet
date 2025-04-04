@@ -137,12 +137,13 @@ var numSelected = null;
 var tileSelected = null;
 
 var errors = 0;
-var maxErrors = 3;
 
 // Load the game when the window is loaded
 window.onload = function() {
     console.log("Script loaded and running");
     setGame();
+
+    document.getElementById("reset").addEventListener("click", resetGame); // Reset button
 }
 
 function setGame() { // Sets up the Sudoku game
@@ -199,6 +200,23 @@ function setGame() { // Sets up the Sudoku game
     }
 }
 
+function resetGame() {
+    //clear board and digits
+    document.getElementById("board").innerHTML = ""; // Clear the board
+    document.getElementById("digits").innerHTML = ""; // Clear the digits
+
+    //clear local storage
+    localStorage.removeItem("board");
+    localStorage.removeItem("solution");
+
+    //reset errors
+    errors = 0;
+    updateErrors();
+
+    //new game
+    setGame();
+}
+
 function selectNumber() { // Selects a number from the digits
     if (numSelected != null) {
         numSelected.classList.remove("number-selected");
@@ -231,13 +249,10 @@ function selectTile() { // Selects a tile on the board
         } else {
             errors += 1;
             updateErrors();
-            if (errors >= maxErrors) {
-                alert("Game Over! You made too many mistakes.");
-            }
         }
     }
 }
 
 function updateErrors() { // Updates the number of errors displayed
-    document.getElementById("errors").innerText = `${maxErrors - errors}/${maxErrors}`;
+    document.getElementById("errors").innerText = `Mistakes: ${errors}`;
 }
