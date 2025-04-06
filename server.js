@@ -28,6 +28,7 @@ wss.on('connection', (ws) => {
         const data = JSON.parse(message);
         console.log('Parsed data:', data);
 
+        // Gérer la création de salle et l'adhésion
         if (data.type === 'join') {
             roomId = data.roomId;
             console.log('Player joined room:', roomId);
@@ -36,22 +37,46 @@ wss.on('connection', (ws) => {
                 rooms[roomId] = [];
             }
 
+            // Vérifier si la salle est pleine (2 joueurs max)
             if (rooms[roomId].length < 2) {
-                rooms[roomId].push(ws);
+                rooms[roomId].push(ws); // Add the player to the room
                 ws.roomId = roomId;
-                ws.playerColor = rooms[roomId].length === 1 ? 'white' : 'black'; // Assign colors based on player order
+                ws.playerColor = rooms[roomId].length === 0 ? 'white' : rooms[roomId][0].playerColor === 'white' ? 'black' : 'white'; // Assign colors based on player order and existing players
                 ws.send(JSON.stringify({ type: 'joined', color: ws.playerColor })); // Send the assigned color to the player
             }
             else {
-                ws.send(JSON.stringify({ type: 'error', message: 'Room is full' }));
+                ws.send(JSON.stringify({ type: 'error', message: 'Room is full' })); // Notify the player that the room is full
             }
         }
 
+        // Gérer le démarrage du jeu
+        if (data.type === 'start') {
+            ws.ready = true; // Mark the player as ready
+            if (rooms[roomId].length === 2) {
+                if (rooms[roomId].every(player => player.ready)) {
+                    rooms[roomId].forEach((player) => {
+                        if (player.readyState === WebSocket.OPEN) { 
+                            player.send(JSON.stringify({ type: 'start' })); // Notify all players to start the game
+                        }
+                    });
+                }
+            }
+        }
 
-        if (data.type === 'move' && rooms[roomId].length === 2) {
+        // Gérer les mouvements de pièces
+        if (data.type === 'move') {
             rooms[roomId].forEach((player) => {
                 if (player !== ws && player.readyState === WebSocket.OPEN) {
-                    player.send(JSON.stringify(data));
+                    player.send(JSON.stringify(data)); // Send the move to the other player
+                }
+            });
+        }
+
+        if (data.type === 'changeColor') {
+            rooms[roomId].forEach((player) => {
+                if (player.readyState === WebSocket.OPEN) {
+                    player.playerColor = player.playerColor === 'white' ? "black" : 'white'; // Change the player's color
+                    player.send(JSON.stringify({ type: 'colorChanged', color: player.playerColor })); // Notify the other player of the color change
                 }
             });
         }
@@ -59,7 +84,23 @@ wss.on('connection', (ws) => {
 
     // Gérer la déconnexion
     ws.on('close', () => {
-        rooms[roomId].pop(ws); // Retire le joueur de la liste
+        // Retirer le joueur déconnecté de la liste
+        rooms[roomId] = rooms[roomId].filter(player => player !== ws);
+
+        // Si la salle est vide, la supprimer
+        if (rooms[roomId].length === 0) {
+            delete rooms[roomId];
+        }
+        else {
+            // Informer l'autre joueur de la déconnexion
+            rooms[roomId].forEach((player) => {
+                if (player.readyState === WebSocket.OPEN) {
+                    player.ready = false; // Mark the other player as not ready
+                    player.send(JSON.stringify({ type: 'disconnected' }));
+                }
+            });
+        }
+
         console.log('A player disconnected.');
     });
 });

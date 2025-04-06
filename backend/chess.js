@@ -1,5 +1,16 @@
 import { initBoard, movePiece, isStalemate, isCheckmate } from "./board.js";
-import { sendMove, playerColor, board } from "./client.js";
+import Piece from './Piece.js';
+
+
+
+const ws = new WebSocket('ws://localhost:3000'); // Connect to the WebSocket server
+let roomId = prompt("Enter room ID to join:");
+let playerColor; // Initialize playerColor
+let board = []; // Initialize the chess board
+let currentPlayerColor; // Keep track of the current player color
+window.lastMove; // Keep track of the last move made
+
+
 
 /**
  * Updates the HTML representation of the chess board.
@@ -7,9 +18,9 @@ import { sendMove, playerColor, board } from "./client.js";
  */
 function updateGridHTML(board) {
     // Get the HTML element that will contain the chess grid
-    let divGrid = document.getElementById("gameGrid");
+    let divBoard = document.getElementById("gameBoard");
     // Clear any previous content of the grid to ensure a fresh update
-    divGrid.innerHTML = "";
+    divBoard.innerHTML = "";
 
     const start = playerColor === 'white' ? 0 : board.length - 1; // Determine the starting index based on the player's color
     const end = playerColor === 'white' ? board.length : -1; // Determine the ending index based on the player's color
@@ -53,8 +64,10 @@ function updateGridHTML(board) {
             divRow.appendChild(divSquare);
         }
         // Append the row to the grid
-        divGrid.appendChild(divRow);
+        divBoard.appendChild(divRow);
     }
+
+    document.getElementById("currentPlayer").textContent = `${currentPlayerColor}`; // Update the current player text
 }
 
 /**
@@ -75,39 +88,44 @@ function setUpBoardInteraction(board) {
             let times = 0; // Counter for mouse clicks
 
             // Add a mousedown event to start dragging
-            if (board[x][y] !== undefined && board[x][y].color === currentPlayerColor && currentPlayerColor === playerColor) {
-                divSquare.addEventListener("mousedown", () => {
-                    isDragging = true;
-                    unselectPiece(board); // Unselect the piece and remove highlights
-                    lastClick = selectPiece(board, currentClick); // Select the piece and highlight it
-                    // Add a class to the div to indicate it's being dragged
-                    divSquare.classList.add("dragging");
-                });
+            const startDrag = (event) => {
+                event.preventDefault(); // Prevent duplicate events
+                isDragging = true;
+                unselectPiece(board); // Unselect the piece and remove highlights
+                lastClick = selectPiece(board, currentClick); // Select the piece and highlight it
+                // Add a class to the div to indicate it's being dragged
+                divSquare.classList.add("dragging");
             }
 
             // Add a mousemove event to move the div while dragging
-            document.addEventListener("mousemove", (event) => {
+            const moveDrag = (event) => {
                 if (isDragging) {
+                    let clickX = (event.changedTouches?.[0]?.clientX || event.clientX) + window.scrollX; // Adjust X coordinate with scroll offset
+                    let clickY = (event.changedTouches?.[0]?.clientY || event.clientY) + window.scrollY; // Adjust Y coordinate with scroll offset
+                    
                     // Update the position of the div to follow the mouse cursor
-                    divSquare.style.left = `${event.clientX - divSquare.offsetWidth / 2}px`;
-                    divSquare.style.top = `${event.clientY - divSquare.offsetHeight / 2}px`;
+                    divSquare.style.left = `${clickX - divSquare.offsetWidth / 2}px`;
+                    divSquare.style.top = `${clickY - divSquare.offsetHeight / 2}px`;
                 }
-            });
+            }
 
             // Add a mouseup event to stop dragging
-            document.addEventListener("mouseup", async (event) => {
+            const stopDrag = async (event) => {
                 if (isDragging) {
+                    event.preventDefault(); // Prevent duplicate events
                     // Stop dragging the div and remove the dragging class
                     divSquare.classList.remove("dragging");
                     divSquare.style.left = "";
                     divSquare.style.top = "";
                     times++;
 
+                    let clickX = event.changedTouches?.[0]?.clientX || event.clientX; // Get the X coordinate of the mouse click
+                    let clickY = event.changedTouches?.[0]?.clientY || event.clientY; // Get the Y coordinate of the mouse click
                     // Get the element under the mouse pointer
-                    const hoveredElementId = document.elementFromPoint(event.clientX, event.clientY)?.parentElement?.id;
+                    const hoveredElementId = document.elementFromPoint(clickX, clickY)?.parentElement?.id;
                     if (hoveredElementId) {
                         // Handle the square click and update the last clicked square
-                        if (hoveredElementId !== `${x},${y}`) {
+                        if (hoveredElementId !== `${x},${y}` && /^[0-9]+,[0-9]+$/.test(hoveredElementId)) {
                             let hoveredClick = { x: Number(hoveredElementId[0]), y: Number(hoveredElementId[2]) }; // Get the coordinates of the square under the mouse pointer
                             isDragging = false;
                             times = 0;
@@ -122,7 +140,18 @@ function setUpBoardInteraction(board) {
                         }
                     }
                 }
-            });
+            }
+
+            if (board[x][y] !== undefined && board[x][y].color === currentPlayerColor && currentPlayerColor === playerColor) {
+                divSquare.addEventListener("mousedown", startDrag); // Add mousedown event to start dragging
+                divSquare.addEventListener("touchstart", startDrag); // Add touchstart event to start dragging on mobile devices
+            }
+            document.addEventListener("mousemove", moveDrag); // Add mousemove event to move the div while dragging
+            document.addEventListener("touchmove", moveDrag); // Add touchmove event to move the div while dragging on mobile devices
+            document.addEventListener("mouseup", stopDrag); // Add mouseup event to stop dragging
+            document.addEventListener("touchend", stopDrag); // Add touchend event to stop dragging on mobile devices
+
+            
         }
     }
 }
@@ -300,10 +329,12 @@ function endgame(board, color) {
 
     let winLoseScreen = document.getElementById("winLoseScreen");
     winLoseScreen.classList.add("active"); // Show the endgame screen
+    setMenuScreen(); // Set the menu screen
 
-    document.getElementById("gameGrid").addEventListener("click", () => {
+    let gameBoard = document.getElementById("gameBoard");
+    gameBoard.addEventListener("click", () => {
         winLoseScreen.classList.remove("active"); // Hide the endgame screen on click 
-        document.getElementById("gameGrid").replaceWith(document.cloneNode(true)); // Clone the document to remove the event listeners
+        gameBoard.replaceWith(gameBoard.cloneNode(true)); // Clone the document to remove the event listeners
     });
 
     return true; // Game is over
@@ -326,9 +357,7 @@ function updateBoardAndCheckEndgame(board, color) {
  * Initializes and starts the chess game by setting up the board, 
  * hiding unnecessary screens, and enabling board interactions.
  */
-function play() {
-    document.getElementById("winLoseScreen").classList.remove("active");
-    document.getElementById("promotionScreen").classList.remove("active");
+function play(board) {
     currentPlayerColor = "white";
 
     initBoard(board);
@@ -336,10 +365,103 @@ function play() {
     setUpBoardInteraction(board);
 }
 
-window.play = play;
-window.lastMove; // Keep track of the last move made
-let currentPlayerColor; // Keep track of the current player color
+/**
+ * Sets the menu screen by hiding unnecessary elements and showing the start button.
+ */
+function setMenuScreen() {
+    document.getElementById("waitingMessage").classList.remove("inactive"); // Show the waiting message
+    document.getElementById("turnIndicator").classList.add("inactive"); // Hide the turn indicator for the player
+    document.getElementById("resetGame").classList.add("inactive"); // Hide the reset button for the player
+    document.getElementById("startGame").classList.remove("inactive"); // Show the start button for the player
+    document.getElementById("changeColor").classList.remove("inactive"); // Show the change color button for the player
+}
 
-export { play, handleOpponentMove };
+/**
+ * Resets the menu screen by hiding unnecessary elements and showing the reset button.
+ */
+function resetMenuScreen() {
+    document.getElementById("winLoseScreen").classList.remove("active"); // Hide the endgame screen
+    document.getElementById("promotionScreen").classList.remove("active"); // Hide the promotion screen
+    document.getElementById("waitingMessage").classList.add("inactive"); // Hide the waiting message
+    document.getElementById("turnIndicator").classList.remove("inactive"); // Show the turn indicator for the player
+    document.getElementById("resetGame").classList.remove("inactive"); // Show the reset button for the player
+    document.getElementById("startGame").classList.add("inactive"); // Hide the start button for the player
+    document.getElementById("changeColor").classList.add("inactive"); // Hide the change color button for the player
+}
+
+/**
+* Sends a move to the WebSocket server.
+* @param {Object} piece - The piece being moved.
+* @param {string} from - The starting position of the piece.
+* @param {string} to - The destination position of the piece.
+* @param {string} promoted - The type of piece the pawn is promoted to, if applicable.
+*/
+function sendMove(piece, from, to, promoted) {
+    ws.send(JSON.stringify({ type: 'move', piece: piece, from: from, to: to, promoted: promoted }));
+}
+
+
+document.getElementById("playAgain").addEventListener("click", () => {
+    ws.send(JSON.stringify({ type: 'start' })); // Send a message to restart the game
+}); 
+
+document.getElementById("resetGame").addEventListener("click", () => {
+    ws.send(JSON.stringify({ type: 'start' })); // Send a message to restart the game
+}); 
+
+document.getElementById("startGame").addEventListener("click", () => {
+    ws.send(JSON.stringify({ type: 'start' })); // Send a message to start the game
+}); 
+
+document.getElementById("changeColor").addEventListener("click", () => {
+    ws.send(JSON.stringify({ type: 'changeColor' })); // Send a message to change the color
+});
+
+
+// When the connection is opened
+ws.onopen = () => {
+    console.log('Connected to the WebSocket server.', roomId);
+    ws.send(JSON.stringify({ type: 'join', roomId: roomId }));
+};
+
+// When a message is received
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'joined') {
+        playerColor = data.color; // Assign the color to the player
+        initBoard(board); // Initialize the board for the player
+        updateGridHTML(board); // Update the board for the player
+        setMenuScreen(); // Set the menu screen for the player
+    }
+
+    if (data.type === 'start') {
+        resetMenuScreen(); // Reset the menu screen
+        play(board); // Start the game for both players
+    }
+
+    if (data.type === 'move') {
+        handleOpponentMove(board, data.from, data.to, data.promoted, data.piece.type); // Call the function to handle the opponent's move
+    }
+
+    if (data.type === 'error') {
+        roomId = prompt("This room is already occupied. Enter another room ID to join:");
+        ws.send(JSON.stringify({ type: 'join', roomId: roomId }));  // Attempt to join a new room
+    }
+
+    if (data.type === 'disconnected') {
+        setMenuScreen()
+    }
+
+    if (data.type === 'colorChanged') {
+        playerColor = data.color; // Update the player's color
+        updateGridHTML(board); // Update the board for the player
+    }
+};
+
+// Handle connection closure
+ws.onclose = () => {
+    console.log('Disconnected from the WebSocket server.');
+};
 
 
