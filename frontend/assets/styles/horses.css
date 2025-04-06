@@ -1,3 +1,12 @@
+.game-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100vw;
+    height: 80vh;
+    flex-direction: column;
+}
+
 .dice-container {
     text-align: center;
     display: flex;
@@ -51,14 +60,6 @@
     /* Ombre bleue douce au focus */
 }
 
-.game-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 80vh;
-}
-
 table {
 
     margin: 20px auto;
@@ -74,22 +75,16 @@ table {
 
 /* Style des cellules */
 td {
-    padding: 20px;
-    /* Espacement à l'intérieur des cellules */
+    width: 50px;
+    height: 50px;
     text-align: center;
-    /* Centrer le texte */
     vertical-align: middle;
-    /* Aligner le texte verticalement */
     border: 1px solid #ddd;
-    /* Bordure légère entre les cellules */
     border-radius: 10px;
-    /* Bord arrondi pour les cellules */
     background-color: #f9f9f9;
-    /* Couleur de fond par défaut */
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
-    /* Ajoute une légère ombre à l'intérieur des cellules */
     transition: background-color 0.3s ease, transform 0.2s ease;
-    /* Animation pour les interactions */
+    position: relative;
 }
 
 /* Ajout de couleur au survol de la souris */
@@ -140,3 +135,58 @@ td:hover {
     color: black;
 }
 
+
+
+
+.pawn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.red-pawn {
+    background-color: red;
+}
+
+.yellow-pawn {
+    background-color: gold;
+}
+
+.blue-pawn {
+    background-color: blue;
+}
+
+.green-pawn {
+    background-color: green;
+}
+
+
+#player {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-top: 20px;
+}
+
+#dice-result {
+    font-size: 20px;
+    color: #555;
+    margin-top: 10px;
+}
+
+#dice {
+    font-size: 50px;
+    font-weight: bold;
+    color: #3498db;
+    margin: 20px 0;
+}

@@ -1,36 +1,87 @@
 import { getHorseTable } from "../../../backend/horses.js";
+import { playerPaths } from "../js/board.js";
 
 let players = ["red", "yellow", "blue", "green"];
 let current = 0;
+let lastDiceRoll = 0;
 
 function setPlayer() {
-  let playerText = document.getElementById("player");
-  playerText.innerHTML = players[current];
+  let playerName = players[current];
+  document.getElementById("player").textContent =
+    "Joueur actuel : " + playerName;
 }
 
-setPlayer();
-
 function diceRoll() {
+  // Générer un nombre aléatoire entre 1 et 6
   let randomNumber = Math.floor(Math.random() * 6) + 1;
-  let dice = document.getElementById("dice");
 
-  // Ajout de la classe pour l'animation
+  // Récupérer l'élément du dé
+  let dice = document.getElementById("dice");
+  lastDiceRoll = randomNumber;
+
+  // Ajouter une classe pour l'animation
   dice.classList.add("rolling");
 
-  // Retirer l'animation après 1 seconde pour revenir à la taille d'origine
+  // Retirer l'animation après 1 seconde et afficher le résultat
   setTimeout(() => {
     dice.classList.remove("rolling");
-    dice.innerHTML = randomNumber;
+    dice.innerHTML = randomNumber; // Afficher le résultat du dé
+
+    // Mettre à jour le texte du résultat
+    const diceResult = document.getElementById("dice-result");
+    diceResult.textContent = "Tu as lancé : " + randomNumber;
+
+    console.log("Le résultat du lancer de dé est : " + randomNumber);
   }, 1000);
 
+  // Afficher dans la console le joueur actuel
   console.log("Current player: " + players[current]);
 
   // Mettre à jour le joueur actuel
-  if (current != 3) current++;
+  if (current !== 3) current++;
   else current = 0;
 
+  // Mettre à jour l'affichage du joueur actuel
   setPlayer();
+
+  // Retourner le résultat du lancer de dé
   return randomNumber;
+}
+
+let playerPositions = {
+  red: 0,
+  blue: 0,
+  green: 0,
+  yellow: 0,
+};
+
+function movePawn(pawn, color) {
+  const path = playerPaths[color];
+  let step = playerPositions[color]; // Position actuelle du pion sur son parcours
+
+  // Si le joueur n'a pas encore sorti son pion (step === 0), on le place à la première case de son parcours
+  if (step === 0 && lastDiceRoll === 6) {
+    playerPositions[color] = 1; // Définir le pion à la première case de son parcours
+    let startCell = path[1]; // Case de départ, juste après la base
+    pawn.parentElement.removeChild(pawn); // Retirer le pion de sa case actuelle
+    let targetCell = document.getElementById(`${startCell.i}-${startCell.j}`);
+    targetCell.appendChild(pawn); // Placer le pion sur la première case du parcours
+    return;
+  }
+
+  // Si le joueur a déjà sorti son pion, on avance
+  if (step > 0) {
+    let nextStep = step + lastDiceRoll;
+    if (nextStep < path.length) {
+      playerPositions[color] = nextStep; // Mettre à jour la position du joueur sur son parcours
+      let nextCell = path[nextStep]; // Obtenir la prochaine case
+      pawn.parentElement.removeChild(pawn); // Retirer le pion de sa case actuelle
+      let targetCell = document.getElementById(`${nextCell.i}-${nextCell.j}`);
+      targetCell.appendChild(pawn); // Placer le pion à la nouvelle case
+    } else {
+      console.log("Le pion a atteint la fin du parcours !");
+    }
+  }
 }
 
 function initHorsesTableInstance() {
@@ -39,9 +90,38 @@ function initHorsesTableInstance() {
   return response;
 }
 
+
+document.addEventListener("DOMContentLoaded", function () {
+  let playerName = players[current];
+  let playerElement = document.getElementById("player");
+  if (playerElement) {
+    playerElement.textContent = "Joueur actuel : " + playerName;
+  } else {
+    console.error('Element with ID "player" not found.');
+  }
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  let playerName = players[current];
+  document.getElementById("player").textContent =
+    "Joueur actuel : " + playerName;
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  const rollButton = document.getElementById("rollButton");
+  if (rollButton) {
+    rollButton.addEventListener("click", diceRoll);
+  } else {
+    console.error('Bouton "rollButton" introuvable.');
+  }
+});
+
 document.addEventListener("DOMContentLoaded", function () {
   let tableInstance = initHorsesTableInstance();
   let table = document.getElementById("table");
+  console.log(table);
   let boardSize = tableInstance.length / 4;
   let board = Array.from({ length: boardSize }, () =>
     Array(boardSize).fill(null)
@@ -103,74 +183,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return "";
   }
 
-  // Fonction pour remplir les cases de chaque couleur selon les spécifications
-  function fillColorCells(color) {
-    let cells = [];
-
-    // Collecter toutes les cellules de chaque couleur
-    for (let i = 0; i < boardSize; i++) {
-      for (let j = 0; j < boardSize; j++) {
-        let cell = board[i][j];
-        if (cell && cell.className === color) {
-          cells.push(cell);
-        }
-      }
-    }
-
-    // Selon la couleur, on applique la numérotation dans l'ordre demandé
-    switch (color) {
-      case "blue":
-        // Bleu : de gauche à haut, puis haut-droite
-        cells.sort((a, b) => {
-          let aI = parseInt(a.id.split("-")[0]);
-          let aJ = parseInt(a.id.split("-")[1]);
-          let bI = parseInt(b.id.split("-")[0]);
-          let bJ = parseInt(b.id.split("-")[1]);
-
-          return aJ - bJ || bI - aI; // Priorité à la gauche puis haut
-        });
-        break;
-      case "green":
-        // Vert : de haut à bas puis à droite
-        cells.sort((a, b) => {
-          let aI = parseInt(a.id.split("-")[0]);
-          let aJ = parseInt(a.id.split("-")[1]);
-          let bI = parseInt(b.id.split("-")[0]);
-          let bJ = parseInt(b.id.split("-")[1]);
-
-          return aI - bI || aJ - bJ; // Priorité à la colonne, puis ligne
-        });
-        break;
-      case "yellow":
-        // Jaune : de droite à gauche, vers le bas, puis à gauche
-        cells.sort((a, b) => {
-          let aI = parseInt(a.id.split("-")[0]);
-          let aJ = parseInt(a.id.split("-")[1]);
-          let bI = parseInt(b.id.split("-")[0]);
-          let bJ = parseInt(b.id.split("-")[1]);
-
-          return bJ - aJ || aI - bI; // Priorité à la droite, puis bas
-        });
-        break;
-      case "red":
-        // Rouge : de bas à haut, puis à gauche
-        cells.sort((a, b) => {
-          let aI = parseInt(a.id.split("-")[0]);
-          let aJ = parseInt(a.id.split("-")[1]);
-          let bI = parseInt(b.id.split("-")[0]);
-          let bJ = parseInt(b.id.split("-")[1]);
-
-          return bI - aI || aJ - bJ; // Priorité à la ligne, puis colonne
-        });
-        break;
-    }
-
-    // Appliquer les numéros dans l'ordre trié
-    cells.forEach((cell) => {
-      cell.innerHTML = colorCounters[color]++; // Afficher le numéro de la case
-    });
-  }
-
   // Remplir les cases colorées et les numéroter dans l'ordre correct
   for (let i = 0; i < boardSize; i++) {
     let row = document.createElement("tr");
@@ -196,47 +208,76 @@ document.addEventListener("DOMContentLoaded", function () {
     table.appendChild(row);
   }
 
-  // Appliquer la numérotation après avoir construit le tableau
-  // fillColorCells("blue");
-  // fillColorCells("green");
-  // fillColorCells("yellow");
-  // fillColorCells("red");
+  // Ajout des pions dans les zones de départ
+  function placeInitialPawns() {
+    const pawnPositions = {
+      blue: [],
+      green: [],
+      yellow: [],
+      red: [],
+    };
 
+    // Utiliser les conditions spécifiques pour chaque coin
+    for (let i = 0; i < boardSize; i++) {
+      for (let j = 0; j < boardSize; j++) {
+        const cell = board[i][j];
+        if (!cell) continue;
+
+        if (i > 0 && i < 3 && j < 3 && j > 0) {
+          pawnPositions["blue"].push(cell);
+        } else if (i > 0 && i < 3 && j >= boardSize - 3 && j <= boardSize - 2) {
+          pawnPositions["green"].push(cell);
+        } else if (
+          i >= boardSize - 3 &&
+          i <= boardSize - 2 &&
+          j >= boardSize - 3 &&
+          j <= boardSize - 2
+        ) {
+          pawnPositions["yellow"].push(cell);
+        } else if (i >= boardSize - 3 && i <= boardSize - 2 && j < 3 && j > 0) {
+          pawnPositions["red"].push(cell);
+        }
+      }
+    }
+
+    // Création et placement des 4 pions pour chaque couleur
+    Object.entries(pawnPositions).forEach(([color, cells]) => {
+      for (let k = 0; k < 4; k++) {
+        const pawn = document.createElement("div");
+        pawn.className = `${color}-pawn`;
+        pawn.dataset.color = color;
+        pawn.dataset.position = -1; // -1 = pas encore sur la piste
+        pawn.innerText = k + 1; // numéro du pion
+        cells[k].appendChild(pawn);
+      }
+    });
+  }
+  console.log(boardSize); // Vérification de la taille du plateau
   console.log(board); // Vérification de la structure du plateau
-});
 
-// Assignation des couleurs aux différentes zones
-let redCells = document.querySelectorAll(".red");
-let yellowCells = document.querySelectorAll(".yellow");
-let blueCells = document.querySelectorAll(".blue");
-let greenCells = document.querySelectorAll(".green");
+  placeInitialPawns();
+  document.addEventListener("click", function (e) {
+    const target = e.target;
 
-// Assignation des IDs aux cellules des différentes couleurs
-let count = 0;
-Array.from(redCells).forEach((cell) => {
-  cell.id = count; // Assignation d'un ID unique
-  cell.innerHTML = count; // Assignation d'une valeur
-  count++;
-});
+    if (target.classList.contains("pawn")) {
+      const pawn = target;
+      const color = pawn.dataset.color;
 
-Array.from(greenCells).forEach((cell) => {
-  cell.id = count;
-  cell.innerHTML = count;
-  count++;
-});
+      // Ne pas autoriser un joueur à jouer un pion d'une autre couleur
+      if (players[current] !== color) {
+        alert("Ce n'est pas ton tour !");
+        return;
+      }
 
-Array.from(yellowCells)
-  .reverse()
-  .forEach((cell) => {
-    cell.id = count;
-    cell.innerHTML = count;
-    count++;
+      if (lastDiceRoll === 0) {
+        alert("Lance d'abord le dé !");
+        return;
+      }
+
+      movePawn(pawn, color); // Déplacer le pion
+      lastDiceRoll = 0; // Réinitialiser le dé après mouvement
+      current = (current + 1) % players.length; // Passer au joueur suivant
+      setPlayer(); // Mettre à jour le joueur actuel
+    }
   });
-
-Array.from(blueCells)
-  .reverse()
-  .forEach((cell) => {
-    cell.id = count;
-    cell.innerHTML = count;
-    count++;
-  });
+});

@@ -5,21 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../assets/styles/horses.css" />
     <link rel="stylesheet" href="../assets/styles/styles.css" />
+    <!-- <link rel="icon" href="favicon.ico" type="image/x-icon" /> -->
+
     <title>Baby horses</title>
   </head>
   <body>
-    <h1>Les petits chevaux</h1>
-    <h2 id="player"></h2>
-    <div class="dice-container">
-      <div id="dice">1</div>
-      <button class="simple-button" class="roll-button" onclick="diceRoll()">
-        Lancer le dé
-      </button>
-    </div>
-    <span id="dice"></span>
-    <div class ="game-container">
+    <div class="game-container">
+      <h1>Les petits chevaux</h1>
+      <h2 id="player"></h2>
+      <div class="dice-container">
+        <div id="dice-result"></div>
+        <div id="dice"></div>
+
+        <button
+          class="simple-button roll-button"
+          id="rollButton"
+          onclick="diceRoll()"
+        >
+          Lancer le dé
+        </button>
+      </div>
       <table id="table"></table>
     </div>
   </body>
-  <script type="module" src="../assets/js/horses.js"></script>
+  <script type="module" src="../assets/js/horses.js" defer></script>
 </html>
