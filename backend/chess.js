@@ -3,7 +3,7 @@ import Piece from './Piece.js';
 
 
 
-const ws = new WebSocket('ws://localhost:3000'); // Connect to the WebSocket server
+const ws = new WebSocket(`ws://${window.location.hostname}:3000`); // Automatically use the server's IP address
 let roomId = prompt("Enter room ID to join:");
 let playerColor; // Initialize playerColor
 let board = []; // Initialize the chess board

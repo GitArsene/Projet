@@ -197,6 +197,7 @@ button:active {
     }
 
     #promotionScreen button {
+        font-size: calc(var(--Square-size) * 0.8vh);
         height: calc(var(--Square-size) * 1vh);
         width: calc(var(--Square-size) * 1vh);
     }
