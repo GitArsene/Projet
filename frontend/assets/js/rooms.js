@@ -3,8 +3,13 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault(); // Empêche le rechargement de la page
 
-    let roomId = document.getElementById("roomIdHorses").value;
+    //TODO : Ajouter contenu pour rejoindre la room des petits chevaux
+  });
 
-    // Appel de la fonction joinRoom avec les valeurs du formulaire
-    joinRoom(roomId, playerName, playerColor);
+document
+  .getElementById("joinRoomFormChess")
+  .addEventListener("submit", function (event) {
+    event.preventDefault(); // Empêche le rechargement de la page
+
+    //TODO : Ajouter contenu pour rejoindre la room des échecs
   });
