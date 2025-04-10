@@ -1,0 +1,91 @@
+body {
+    font-family: 'Georgia', serif;
+    background: linear-gradient(to bottom, #fdf6e3, #f0e0c6);
+    padding: 3vw;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4vh;
+    align-items: center;
+
+    &>div {
+        background-color: #fff8e7;
+        border: 3px solid #8b5e3c;
+        border-radius: 20px;
+        padding: 3vw;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1);
+
+        h2 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #5a3825;
+            margin-bottom: 2vh;
+            text-shadow: 1px 1px 0 #d5b895;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vh;
+
+            label {
+                font-weight: bold;
+                color: #4a2c1d;
+                margin-bottom: 0.5vh;
+            }
+
+            input {
+                padding: 0.8vh 1vw;
+                font-size: 1rem;
+                border: 2px solid #b67a45;
+                border-radius: 10px;
+                background-color: #fffefb;
+                transition: box-shadow 0.2s;
+
+                &:focus {
+                    outline: none;
+                    box-shadow: 0 0 5px #b67a45;
+                }
+            }
+
+            button {
+                margin-top: 1.5vh;
+                padding: 1vh;
+                font-size: 1.1rem;
+                font-weight: bold;
+                color: #fff8e7;
+                background-color: #b67a45;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+
+                &:hover {
+                    background-color: #8b5e3c;
+                }
+            }
+        }
+    }
+
+    @media (max-width: 600px) {
+        padding: 5vw;
+
+        &>div {
+            padding: 5vw;
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            form {
+
+                input,
+                button {
+                    font-size: 1rem;
+                }
+            }
+        }
+    }
+}

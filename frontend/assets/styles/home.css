@@ -1,0 +1,104 @@
+body {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto repeat(3, auto);
+    grid-template-areas:
+        "title"
+        "game1"
+        "game2"
+        "game3";
+    height: auto;
+    padding: 2vw;
+    margin: 0;
+    font-family: 'Georgia', serif;
+    background: linear-gradient(to bottom, #fdf6e3, #f0e0c6);
+
+    h1 {
+        grid-area: title;
+        text-align: center;
+        font-size: 3rem;
+        margin: 2vh 0;
+        color: #5a3825;
+        text-shadow: 1px 1px 0 #d5b895;
+        border-bottom: 4px double #8b5e3c;
+        padding-bottom: 1vh;
+    }
+
+    & div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2vw;
+        border: 3px solid #8b5e3c;
+        border-radius: 20px;
+        margin: 3vh 0;
+        background-color: #fff8e7;
+        box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease;
+
+        &:hover {
+            transform: scale(1.01);
+        }
+
+        & a {
+            font-size: 1.5rem;
+            text-decoration: none;
+            color: #4a2c1d;
+            font-weight: bold;
+            padding: 1vw;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+
+            &:hover {
+                color: #b67a45;
+                border-bottom: 2px dashed #b67a45;
+            }
+        }
+
+        & img {
+            height: 12vw;
+            max-height: 180px;
+            width: auto;
+            margin: 0 2vw;
+            border-radius: 10px;
+            border: 2px solid #b67a45;
+            object-fit: cover;
+        }
+    }
+
+    & #G1 {
+        grid-area: game1;
+        flex-direction: row;
+    }
+
+    & #G2 {
+        grid-area: game2;
+        flex-direction: row-reverse;
+    }
+
+    & #G3 {
+        grid-area: game3;
+        flex-direction: row;
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 2.2rem;
+        }
+
+        & div {
+            flex-direction: column;
+            text-align: center;
+
+            & img {
+                height: 35vw;
+                margin: 1vh 0;
+            }
+
+            & a {
+                font-size: 1.2rem;
+                margin-bottom: 1vh;
+            }
+        }
+    }
+}
