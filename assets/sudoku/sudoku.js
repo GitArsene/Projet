@@ -1,5 +1,108 @@
 //Generator for Sudoku puzzle
-var difficulty = 40;
+var difficulty = 40; //Defaul difficulty 
+
+// Sudoku game
+var numSelected = null;
+var tileSelected = null;
+
+var errors = 0;
+
+// Load the game when the window is loaded
+window.onload = function () {
+    console.log("Script loaded and running");
+    loadErrors(); // Load the saved number of mistakes
+    setGame();
+
+    // Add event listeners to difficulty buttons
+    document.getElementById("easy").addEventListener("click", function () {
+        setDifficulty(30); // Easy: fewer cells removed
+    });
+    document.getElementById("medium").addEventListener("click", function () {
+        setDifficulty(40); // Medium: default difficulty
+    });
+    document.getElementById("hard").addEventListener("click", function () {
+        setDifficulty(60); // Hard: more cells removed
+    });
+
+    document.getElementById("reset").addEventListener("click", resetGame); // Reset button
+};
+
+function setDifficulty(level) {
+    difficulty = level; // Update the difficulty level
+    resetGame(); // Reset the game with the new difficulty
+}
+
+function setGame() { // Sets up the Sudoku game
+    let board, solution;
+
+    // Check if there is a saved game in localStorage
+    if (localStorage.getItem("board") && localStorage.getItem("solution")) {
+        board = JSON.parse(localStorage.getItem("board"));
+        solution = JSON.parse(localStorage.getItem("solution"));
+    } else {
+        // Generate a new Sudoku puzzle
+        let generated = generateSudoku();
+        board = generated.board;
+        solution = generated.solution;
+
+        // Save the generated board and solution to localStorage
+        localStorage.setItem("board", JSON.stringify(board));
+        localStorage.setItem("solution", JSON.stringify(solution));
+    }
+
+    // Digits 1-9
+    for (var i = 1; i <= 9; i++) {
+        var number = document.createElement("div");
+        number.id = i;
+        number.innerText = i;
+        number.addEventListener("click", selectNumber);
+        number.classList.add("number");
+        document.getElementById("digits").appendChild(number);
+    }
+
+    // Board 9x9
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            let tile = document.createElement("div");
+            tile.id = r.toString() + "-" + c.toString();
+
+            if (board[r][c] != 0) {
+                tile.innerText = board[r][c];
+                tile.classList.add("tile-start");
+            }
+
+            if (r == 2 || r == 5) {
+                tile.classList.add("horizontal-line");
+            }
+
+            if (c == 2 || c == 5) {
+                tile.classList.add("vertical-line");
+            }
+
+            tile.addEventListener("click", selectTile);
+            tile.classList.add("tile");
+            document.getElementById("board").append(tile);
+        }
+    }
+}
+
+function resetGame() {
+    // Clear board and digits
+    document.getElementById("board").innerHTML = ""; // Clear the board
+    document.getElementById("digits").innerHTML = ""; // Clear the digits
+
+    // Clear local storage
+    localStorage.removeItem("board");
+    localStorage.removeItem("solution");
+    localStorage.removeItem("errors"); // Reset the saved mistakes
+
+    // Reset errors
+    errors = 0;
+    updateErrors();
+
+    // Start a new game
+    setGame();
+}
 
 function generateSudoku() { // Returns an object with the board and solution
     let board = createEmptyBoard();
@@ -132,98 +235,20 @@ function randomCell() { // Returns a random cell index between 0 and 80
     return Math.floor(Math.random() * 81);
 }
 
-// Sudoku game
-var numSelected = null;
-var tileSelected = null;
-
-var errors = 0;
-
-// Load the game when the window is loaded
-window.onload = function() {
-    console.log("Script loaded and running");
-    setGame();
-
-    document.getElementById("reset").addEventListener("click", resetGame); // Reset button
-}
-
-function setGame() { // Sets up the Sudoku game
-    let board, solution;
-
-    // Check if there is a saved game in localStorage
-    if (localStorage.getItem("board") && localStorage.getItem("solution")) {
-        board = JSON.parse(localStorage.getItem("board"));
-        solution = JSON.parse(localStorage.getItem("solution"));
-    } else {
-        // Generate a new Sudoku puzzle
-        let generated = generateSudoku();
-        board = generated.board;
-        solution = generated.solution;
-
-        // Save the generated board and solution to localStorage
-        localStorage.setItem("board", JSON.stringify(board));
-        localStorage.setItem("solution", JSON.stringify(solution));
-    }
-
-    // Digits 1-9
-    for (var i = 1; i <= 9; i++) {
-        var number = document.createElement("div");
-        number.id = i;
-        number.innerText = i;
-        number.addEventListener("click", selectNumber);
-        number.classList.add("number");
-        document.getElementById("digits").appendChild(number);
-    }
-
-    // Board 9x9
-    for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-            let tile = document.createElement("div");
-            tile.id = r.toString() + "-" + c.toString();
-
-            if (board[r][c] != 0) {
-                tile.innerText = board[r][c];
-                tile.classList.add("tile-start");
-            }
-
-            if (r == 2 || r == 5) {
-                tile.classList.add("horizontal-line");
-            }
-
-            if (c == 2 || c == 5) {
-                tile.classList.add("vertical-line");
-            }
-
-            tile.addEventListener("click", selectTile);
-            tile.classList.add("tile");
-            document.getElementById("board").append(tile);
-        }
-    }
-}
-
-function resetGame() {
-    //clear board and digits
-    document.getElementById("board").innerHTML = ""; // Clear the board
-    document.getElementById("digits").innerHTML = ""; // Clear the digits
-
-    //clear local storage
-    localStorage.removeItem("board");
-    localStorage.removeItem("solution");
-
-    //reset errors
-    errors = 0;
-    updateErrors();
-
-    //new game
-    setGame();
-}
-
-function selectNumber() { // Selects a number from the digits
-    if (numSelected != null) {
+function selectNumber() { // Selects or unselects a number from the digits
+    if (numSelected === this) {
+        // If the clicked number is already selected, unselect it
         numSelected.classList.remove("number-selected");
+        numSelected = null;
+    } else {
+        // If a different number is selected, unselect the previous one
+        if (numSelected != null) {
+            numSelected.classList.remove("number-selected");
+        }
+        // Select the clicked number
+        numSelected = this;
+        numSelected.classList.add("number-selected");
     }
-
-    numSelected = this;
-    numSelected.classList.add("number-selected");
 }
 
 function selectTile() { // Selects a tile on the board
@@ -244,10 +269,14 @@ function selectTile() { // Selects a tile on the board
 
             // Update the board in localStorage
             let board = JSON.parse(localStorage.getItem("board"));
-            board[r][c] = numSelected.id;
+            board[r][c] = parseInt(numSelected.id);
             localStorage.setItem("board", JSON.stringify(board));
+
+            // Check for victory
+            checkVictory();
         } else {
             errors += 1;
+            localStorage.setItem("errors", errors); // Save the updated number of mistakes
             updateErrors();
         }
     }
@@ -255,4 +284,64 @@ function selectTile() { // Selects a tile on the board
 
 function updateErrors() { // Updates the number of errors displayed
     document.getElementById("errors").innerText = `Mistakes: ${errors}`;
+}
+
+function loadErrors() { // Load the saved number of mistakes from localStorage
+    if (localStorage.getItem("errors")) {
+        errors = parseInt(localStorage.getItem("errors"));
+    } else {
+        errors = 0; // Default to 0 if no saved value exists
+    }
+    updateErrors();
+}
+
+function checkVictory() {
+    let board = JSON.parse(localStorage.getItem("board"));
+    let solution = JSON.parse(localStorage.getItem("solution"));
+
+    // Check if the board matches the solution
+    for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+            if (board[r][c] !== solution[r][c]) {
+                return false; // Not solved yet
+            }
+        }
+    }
+
+    // If the board matches the solution, display the victory message
+    displayVictoryMessage();
+    return true;
+}
+
+function displayVictoryMessage() {
+    // Create a victory message container
+    const victoryContainer = document.createElement("div");
+    victoryContainer.id = "victory-message";
+    victoryContainer.style.position = "fixed";
+    victoryContainer.style.top = "50%";
+    victoryContainer.style.left = "50%";
+    victoryContainer.style.transform = "translate(-50%, -50%)";
+    victoryContainer.style.backgroundColor = "white";
+    victoryContainer.style.border = "2px solid black";
+    victoryContainer.style.padding = "20px";
+    victoryContainer.style.textAlign = "center";
+    victoryContainer.style.zIndex = "1000";
+
+    // Add the victory message
+    const message = document.createElement("p");
+    message.innerText = `Congratulations! You solved the puzzle with ${errors} mistakes.`;
+    victoryContainer.appendChild(message);
+
+    // Add a restart button
+    const restartButton = document.createElement("button");
+    restartButton.innerText = "Restart";
+    restartButton.style.marginTop = "10px";
+    restartButton.addEventListener("click", function () {
+        document.body.removeChild(victoryContainer); // Remove the victory message
+        resetGame(); // Restart the game
+    });
+    victoryContainer.appendChild(restartButton);
+
+    // Add the victory message to the body
+    document.body.appendChild(victoryContainer);
 }
