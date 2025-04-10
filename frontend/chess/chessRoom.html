@@ -4,21 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../assets/styles/Rooms.css">
-    <title>Jeu des petits chevaux</title>
+    <title>Jeu des échecs</title>
 </head>
 <body>
-    <h1>Jeu des petits chevaux</h1>
     <div>
-        <h2>Rejoindre une salle de jeux</h2>
-        <form id="joinRoomFormHorses">
-            <label for="roomIdHorses">ID de la salle :</label>
-            <input type="text" id="roomIdHorses" name="roomIdHorses" required>
+        <h2>Rejoindre une partie</h2>
+        <form action="frontend/chess/chessRoom.html">
+            <label for="roomIdChess">ID de la salle :</label>
+            <input type="text" id="roomIdChess" name="roomIdChess" required>
             <button type="submit">Rejoindre</button>
         </form>
     </div>
     <div>
-        <h2>Créer une salle de jeux</h2>
-        <form id="createRoomForm">
+        <h2>Créer une partie</h2>
+        <form id="createRoomFormChess">
             <button type="submit">Créer</button>
         </form>
     </div>
