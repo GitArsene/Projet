@@ -107,7 +107,7 @@ function resetGame() {
 function generateSudoku() { // Returns an object with the board and solution
     let board = createEmptyBoard();
     fillBoard(board);
-    let solution = JSON.parse(JSON.stringify(board)); // Deep copy of the board
+    let solution = JSON.parse(JSON.stringify(board));
     removeCells(board, difficulty); // Adjust the number of cells to remove for difficulty
     return { board, solution };
 }
@@ -159,6 +159,7 @@ function isSafeInBox(board, row, col, num) { // Checks if a number is safe to pl
 }
 
 function fillRemaining(board, i, j) { // Recursive backtracking algorithm to fill the remaining cells
+    // You can find this algorithm in many Sudoku solvers
     if (j >= 9 && i < 8) {
         i++;
         j = 0;
@@ -183,6 +184,7 @@ function fillRemaining(board, i, j) { // Recursive backtracking algorithm to fil
             }
         }
     }
+    // If the cell is already filled, move to the next cell
     for (let num = 1; num <= 9; num++) {
         if (isSafe(board, i, j, num)) {
             board[i][j] = num;
@@ -198,12 +200,12 @@ function fillRemaining(board, i, j) { // Recursive backtracking algorithm to fil
 function isSafe(board, row, col, num) { // Checks if a number is safe to place in a cell
     return isSafeInRow(board, row, num) &&
            isSafeInCol(board, col, num) &&
-           isSafeInBox(board, row - row % 3, col - col % 3, num);
+           isSafeInBox(board, row - row % 3, col - col % 3, num); // Check row, column, and box
 }
 
 function isSafeInRow(board, row, num) { // Checks if a number is safe to place in a row
     for (let col = 0; col < 9; col++) {
-        if (board[row][col] === num) {
+        if (board[row][col] === num) { 
             return false;
         }
     }
@@ -221,6 +223,7 @@ function isSafeInCol(board, col, num) { // Checks if a number is safe to place i
 
 function removeCells(board, count) { // Removes cells from the board to create the puzzle
     while (count > 0) {
+        // Randomly select a cell to remove
         let cellId = randomCell();
         let i = Math.floor(cellId / 9);
         let j = cellId % 9;
@@ -231,7 +234,7 @@ function removeCells(board, count) { // Removes cells from the board to create t
     }
 }
 
-function randomCell() { // Returns a random cell index between 0 and 80
+function randomCell() { // Returns a random cell index between 0 and 80 (9x9 grid)
     return Math.floor(Math.random() * 81);
 }
 
@@ -262,7 +265,7 @@ function selectTile() { // Selects a tile on the board
         let r = parseInt(coords[0]);
         let c = parseInt(coords[1]);
 
-        let solution = JSON.parse(localStorage.getItem("solution"));
+        let solution = JSON.parse(localStorage.getItem("solution")); // Get the solution from localStorage
 
         if (solution[r][c] == numSelected.id) {
             this.innerText = numSelected.id;
@@ -273,8 +276,9 @@ function selectTile() { // Selects a tile on the board
             localStorage.setItem("board", JSON.stringify(board));
 
             // Check for victory
-            checkVictory();
-        } else {
+            checkVictory();  
+        } 
+        else {
             errors += 1;
             localStorage.setItem("errors", errors); // Save the updated number of mistakes
             updateErrors();
@@ -289,7 +293,8 @@ function updateErrors() { // Updates the number of errors displayed
 function loadErrors() { // Load the saved number of mistakes from localStorage
     if (localStorage.getItem("errors")) {
         errors = parseInt(localStorage.getItem("errors"));
-    } else {
+    } 
+    else {
         errors = 0; // Default to 0 if no saved value exists
     }
     updateErrors();
