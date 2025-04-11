@@ -1,0 +1,18 @@
+# Utiliser une image Node.js officielle
+FROM node:latest
+
+# Définir le répertoire de travail dans le conteneur
+WORKDIR /appChess
+
+# Copier les fichiers de dépendances et installer
+COPY package*.json ./
+RUN npm install
+
+# Copier tout le reste des fichiers
+COPY . .
+
+# Exposer le port 8080, sur lequel le serveur écoute dans le conteneur
+EXPOSE 8080
+
+# Démarrer le serveur
+CMD ["node", "server.js"]

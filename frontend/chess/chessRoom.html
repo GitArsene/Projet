@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../assets/styles/Rooms.css">
+    <script src="../assets/js/rooms.js" defer></script>
     <title>Jeu des échecs</title>
 </head>
 <body>
     <div>
         <h2>Rejoindre une partie</h2>
-        <form action="frontend/chess/chessRoom.html">
+        <form id="joinRoomFormChess">
             <label for="roomIdChess">ID de la salle :</label>
             <input type="text" id="roomIdChess" name="roomIdChess" required>
             <button type="submit">Rejoindre</button>
