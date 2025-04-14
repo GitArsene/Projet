@@ -8,7 +8,7 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-
+    background: #ebebeb;
 }
 
 hr {
@@ -16,31 +16,37 @@ hr {
 }
 
 h1 {
-    position : sticky;
+    position: sticky;
     font-size: 3vmin;
 }
 
 button {
-    background-color: whitesmoke; 
-    border: 2px solid black; 
-    color: black; 
-    font-size: 2vmin; /* Scale font size relative to the viewport */
+    background-color: whitesmoke;
+    border: 2px solid black;
+    color: black;
+    font-size: 2vmin;
+    /* Scale font size relative to the viewport */
     font-weight: bold;
-    padding: 0.5vmin 2vmin; 
-    margin: 0.5vmin; 
-    border-radius: 5px; 
+    padding: 0.5vmin 2vmin;
+    margin: 0.5vmin;
+    border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transitions */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    /* Smooth transitions */
 }
 
 button:hover {
-    background-color: lightgray; /* Slightly darker shade on hover */
-    transform: scale(1.05); /* Slight zoom effect on hover */
+    background-color: lightgray;
+    /* Slightly darker shade on hover */
+    transform: scale(1.05);
+    /* Slight zoom effect on hover */
 }
 
 button:active {
-    background-color: gray; /* Darker shade when clicked */
-    transform: scale(0.95); /* Slight shrink effect when clicked */
+    background-color: gray;
+    /* Darker shade when clicked */
+    transform: scale(0.95);
+    /* Slight shrink effect when clicked */
 }
 
 #errors {
@@ -51,26 +57,30 @@ button:active {
 
 #game-container {
     display: flex;
-    flex-direction: column; 
-    justify-content: center; 
-    align-items: center; 
-    gap: 2vmin; 
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2vmin;
     width: 100%;
-    height: 100vh; /* Make the container fill the viewport height */
+    height: 100vh;
+    /* Make the container fill the viewport height */
     max-width: 1000px;
-    padding : 0px;
-    margin: 0 auto; 
+    padding: 0px;
+    margin: 0 auto;
     box-sizing: border-box;
 }
 
 #board {
-    width: 70vmin; /* Ensure the board has a fixed size */
+    width: 70vmin;
+    /* Ensure the board has a fixed size */
     height: 70vmin;
     max-width: 450px;
     max-height: 450px;
-    display: grid; 
-    grid-template-columns: repeat(9, 1fr); /* 9 equal columns */
-    grid-template-rows: repeat(9, 1fr); /* 9 equal rows */
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    /* 9 equal columns */
+    grid-template-rows: repeat(9, 1fr);
+    /* 9 equal rows */
     border: 2px solid black;
     box-sizing: border-box;
 }
@@ -82,37 +92,39 @@ button:active {
     border: 1px solid lightgray;
 
     /* text */
-    font-size: 25px; 
+    font-size: 25px;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 #digits {
-    display: grid; 
-    grid-template-columns: repeat(9, 1fr); /* Create a single row with 9 columns */
-    grid-template-rows: 1fr; /* Single row */
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    /* Create a single row with 9 columns */
+    grid-template-rows: 1fr;
+    /* Single row */
     width: 70vmin;
-    height: auto; 
-    max-width: 450px; 
+    height: auto;
+    max-width: 450px;
     margin: 0;
     padding: 0;
-    gap: 0.5vmin; 
+    gap: 0.5vmin;
     box-sizing: border-box;
 }
 
 .number {
-    width: 100%; 
-    height: 100%; 
-    aspect-ratio: 1; 
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1;
     border: 2px solid gray;
-    margin: 0; 
+    margin: 0;
     padding: 0;
     transition: background-color 0.3s ease, transform 0.2s ease;
 
     /* text */
-    font-size: 25px; 
+    font-size: 25px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -131,15 +143,16 @@ button:active {
 }
 
 .tile-start {
-    background-color: whitesmoke; /* Light background for starting tiles */
+    background-color: whitesmoke;
+    /* Light background for starting tiles */
 }
 
 .horizontal-line {
-    border-bottom: 2px solid black; /* Thicker line for 3x3 grid separation */
+    border-bottom: 2px solid black;
+    /* Thicker line for 3x3 grid separation */
 }
 
 .vertical-line {
-    border-right: 2px solid black; /* Thicker line for 3x3 grid separation */
+    border-right: 2px solid black;
+    /* Thicker line for 3x3 grid separation */
 }
-
-
