@@ -1,0 +1,220 @@
+:root {
+    --color-light: #f0d9b5;
+    --color-dark: #b58863;
+    --color-check: #f6826c;
+    --color-highlight: #0064ff33;
+    --color-selected: white;
+    --color-menu-background: #fafafab3;
+    --Square-size: 11;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, auto);
+    gap: 1vw;
+    grid-template-areas:
+        "gameDiv"
+        "menu"
+        "empty";
+    place-items: center;
+    background: linear-gradient(135deg, #8e9eab, #1c1d1d);
+
+    padding: 1vh;
+    min-height: 98vh;
+}
+
+#gameDiv {
+    grid-area: gameDiv;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameTitle {
+    font-size: 8vw;
+    font-weight: bold;
+    margin: 0;
+    text-align: center;
+}
+
+#gameBoard {
+    border: solid black 3px;
+    user-select: none;
+
+    .row {
+        display: flex;
+
+        .square {
+            box-sizing: border-box;
+            height: calc(var(--Square-size) * 1vw);
+            width: calc(var(--Square-size) * 1vw);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: calc(var(--Square-size) * 0.8vw);
+            cursor: grab;
+
+            .piece {
+                box-sizing: border-box;
+                height: inherit;
+                width: inherit;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: transparent;
+            }
+
+            .dragging {
+                cursor: grabbing;
+                position: absolute;
+                z-index: 100;
+            }
+
+            .highlighted {
+                background-color: var(--color-highlight);
+            }
+        }
+
+        .selected {
+            border: solid var(--color-selected) 3px;
+        }
+
+        .dark {
+            background-color: var(--color-dark);
+        }
+
+        .light {
+            background-color: var(--color-light);
+        }
+
+        .check {
+            background-color: var(--color-check);
+        }
+    }
+}
+
+
+#promotionScreen {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+
+    button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: calc(var(--Square-size) * 0.8vw);
+        height: calc(var(--Square-size) * 1vw);
+        width: calc(var(--Square-size) * 1vw);
+    }
+}
+
+
+#winLoseScreen {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: calc(var(--Square-size) * 2vw);
+    width: calc(var(--Square-size) * 4vw);
+    font-weight: bold;
+    position: absolute;
+    background-color: var(--color-menu-background);
+    border-radius: 10px;
+    border: solid black 3px;
+    z-index: 1000;
+
+    button {
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 5%;
+    }
+}
+
+
+#menu {
+    grid-area: menu;
+    background-color: var(--color-menu-background);
+    border: solid black 2px;
+    border-radius: 10px;
+    margin: 0 10%;
+    padding: 10px;
+    text-align: center;
+    max-height: fit-content;
+
+
+    h2 {
+        margin: 0;
+        font-size: 1.5em;
+        text-align: center;
+    }
+
+    button {
+        width: 100%;
+        margin: 5px 0;
+        padding: 10px;
+        font-size: 1em;
+        border-radius: 5px;
+    }
+}
+
+
+button:hover {
+    cursor: pointer;
+    background-color: #ffffff;
+}
+
+button:active {
+    background-color: #e0e0e0;
+}
+
+.active {
+    display: flex !important;
+}
+
+.inactive {
+    display: none !important;
+}
+
+
+@media (orientation: landscape) {
+    #gameTitle {
+        font-size: 8vh;
+    }
+
+    #gameBoard .row .square {
+        height: calc(var(--Square-size) * 1vh);
+        width: calc(var(--Square-size) * 1vh);
+        font-size: calc(var(--Square-size) * 0.8vh);
+    }
+
+    #promotionScreen button {
+        font-size: calc(var(--Square-size) * 0.8vh);
+        height: calc(var(--Square-size) * 1vh);
+        width: calc(var(--Square-size) * 1vh);
+    }
+
+    #winLoseScreen {
+        height: calc(var(--Square-size) * 2vh);
+        width: calc(var(--Square-size) * 4vh);
+    }
+
+    @media (width > 1000px) {
+        main {
+            grid-template-columns: auto calc(var(--Square-size) * 8vh) auto auto;
+            grid-template-rows: 1fr;
+            gap: 1vh;
+            grid-template-areas: "empty1 gameDiv menu empty2";
+        }
+    
+    }
+}
+
