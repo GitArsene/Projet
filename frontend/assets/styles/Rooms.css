@@ -89,3 +89,30 @@ body {
         }
     }
 }
+
+#rooms{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+
+    & #roomList{
+        padding: 0;
+
+        & .room-button{
+            background-color: #b67a45;
+            color: #fff8e7;
+            padding: 1vh 2vw;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+
+            &:hover {
+                background-color: #8b5e3c;
+            }
+        }
+    }
+}

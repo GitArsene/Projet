@@ -108,6 +108,12 @@ wss.on("connection", (ws) => {
   });
 });
 
+app.get("/api/chess/rooms", (req, res) => {
+  let roomsID = Object.keys(rooms);
+  roomsID = roomsID.filter((element) => rooms[element].length < 2);
+  res.send(JSON.stringify(roomsID));
+});
+
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://localhost:${PORT}/`);
 });
