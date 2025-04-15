@@ -17,11 +17,12 @@ const PORT = process.env.PORT || 8080; // Le serveur écoute sur le port 8080 da
 app.use(express.json());
 app.use(express.static(__dirname));
 
-app.get("/api/chess/hello", (req, res) => {
-  res.json({ message: "Hello from chess backend!" });
+app.get("/api/horses/hello", (req, res) => {
+  res.json({ message: "Hello from horses backend!" });
 });
 
-const rooms = {}; // { roomId: [player1, player2] }
+const rooms = {}; // { roomId: [player1, player2, player3, player4] }
+const colors = ["red", "blue", "green", "yellow"]; // Les couleurs disponibles
 
 wss.on("connection", (ws) => {
   let roomId;
@@ -38,15 +39,10 @@ wss.on("connection", (ws) => {
         rooms[roomId] = [];
       }
 
-      if (rooms[roomId].length < 2) {
+      if (rooms[roomId].length < 4) {
         rooms[roomId].push(ws);
         ws.roomId = roomId;
-        ws.playerColor =
-          rooms[roomId].length === 0
-            ? "white"
-            : rooms[roomId][0].playerColor === "white"
-            ? "black"
-            : "white";
+        ws.playerColor = colors[rooms[roomId].length - 1]; // Attribuer une couleur unique
 
         ws.send(JSON.stringify({ type: "joined", color: ws.playerColor }));
       } else {
@@ -56,7 +52,7 @@ wss.on("connection", (ws) => {
 
     if (data.type === "start") {
       ws.ready = true;
-      if (rooms[roomId].length === 2 && rooms[roomId].every((p) => p.ready)) {
+      if (rooms[roomId].length === 4 && rooms[roomId].every((p) => p.ready)) {
         rooms[roomId].forEach((p) => {
           if (p.readyState === ws.OPEN) {
             p.send(JSON.stringify({ type: "start" }));
@@ -69,18 +65,6 @@ wss.on("connection", (ws) => {
       rooms[roomId].forEach((player) => {
         if (player !== ws && player.readyState === ws.OPEN) {
           player.send(JSON.stringify(data));
-        }
-      });
-    }
-
-    if (data.type === "changeColor") {
-      rooms[roomId].forEach((player) => {
-        if (player.readyState === ws.OPEN) {
-          player.playerColor =
-            player.playerColor === "white" ? "black" : "white";
-          player.send(
-            JSON.stringify({ type: "colorChanged", color: player.playerColor })
-          );
         }
       });
     }
@@ -104,9 +88,9 @@ wss.on("connection", (ws) => {
   });
 });
 
-app.get("/api/chess/rooms", (req, res) => {
+app.get("/api/horses/rooms", (req, res) => {
   let roomsID = Object.keys(rooms);
-  roomsID = roomsID.filter((element) => rooms[element].length < 2);
+  roomsID = roomsID.filter((element) => rooms[element].length < 4);
   res.send(JSON.stringify(roomsID));
 });
 
