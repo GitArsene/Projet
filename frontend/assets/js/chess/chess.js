@@ -488,49 +488,6 @@ ws.onopen = () => {
   ws.send(JSON.stringify({ type: "join", roomId: roomId }));
 };
 
-// When a message is received
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-
-  if (data.type === "joined") {
-    playerColor = data.color; // Assign the color to the player
-    initBoard(board); // Initialize the board for the player
-    updateGridHTML(board); // Update the board for the player
-    setMenuScreen(); // Set the menu screen for the player
-  }
-
-  if (data.type === "start") {
-    resetMenuScreen(); // Reset the menu screen
-    play(board); // Start the game for both players
-  }
-
-  if (data.type === "move") {
-    handleOpponentMove(
-      board,
-      data.from,
-      data.to,
-      data.promoted,
-      data.piece.type
-    ); // Call the function to handle the opponent's move
-  }
-
-  if (data.type === "error") {
-    roomId = prompt(
-      "This room is already occupied. Enter another room ID to join:"
-    );
-    ws.send(JSON.stringify({ type: "join", roomId: roomId })); // Attempt to join a new room
-  }
-
-  if (data.type === "disconnected") {
-    setMenuScreen();
-  }
-
-  if (data.type === "colorChanged") {
-    playerColor = data.color; // Update the player's color
-    updateGridHTML(board); // Update the board for the player
-  }
-};
-
 // Handle connection closure
 ws.onclose = () => {
   console.log("Déconnecté du serveur WebSocket.");
