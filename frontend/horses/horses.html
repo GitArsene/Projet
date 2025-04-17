@@ -4,28 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../assets/styles/horses.css" />
-    <link rel="stylesheet" href="../assets/styles/styles.css" />
-    <!-- <link rel="icon" href="favicon.ico" type="image/x-icon" /> -->
-
+    <script type="module" src="../assets/js/horses.js" defer></script>
     <title>Baby horses</title>
   </head>
   <body>
     <div class="game-container">
       <h1>Les petits chevaux</h1>
       <h2 id="player"></h2>
+
       <div class="dice-container">
         <div id="dice-result"></div>
         <div id="dice"></div>
-
-        <button
-          class="simple-button roll-button"
-          id="rollButton"
-          onclick="diceRoll()"
-        >
+        <button class="simple-button roll-button" id="rollButton">
           Lancer le dé
         </button>
       </div>
-      <table id="table"></table>
+      <!-- Plateau de jeu -->
+      <table id="table">
+        <!-- Le JS remplira ce plateau dynamiquement -->
+      </table>
     </div>
   </body>
   <script type="module" src="../assets/js/horses.js" defer></script>
