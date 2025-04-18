@@ -8,8 +8,7 @@ services:
     ports:
       - "8081:80" # Expose le port 80 du conteneur sur le port 8081 de l'hôte
     networks:
-      - chess-network
-      - horses-network
+      - network
 
   backend-chess:
     build:
@@ -21,7 +20,7 @@ services:
     volumes:
       - ./backend/chess:/appChess
     networks:
-      - chess-network
+      - network
 
   backend-horses:
     build:
@@ -33,10 +32,8 @@ services:
     volumes:
       - ./backend/horses:/appHorses
     networks:
-      - horses-network
+      - network
 
 networks:
-  chess-network:
-    driver: bridge
-  horses-network:
+  network:
     driver: bridge

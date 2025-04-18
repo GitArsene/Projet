@@ -1,3 +1,297 @@
+// Se connecter au serveur WebSocket sur ws://localhost:8083
+const ws = new WebSocket(`ws://${window.location.hostname}:8083`);
+
+// Récupérer l'ID de salle depuis l'URL (ex: ?room=1234)
+const urlParams = new URLSearchParams(window.location.search);
+let roomId = urlParams.get("room");
+
+if (!roomId) {
+  alert("Aucune salle sélectionnée. Retour à la page de sélection.");
+  window.location.href = "../../frontend/horses/horsesRoom.html";
+}
+
+console.log(roomId);
+
+let playerColor;
+let currentPlayerColor;
+let players = [];
+let board = [];
+let lastDiceRoll = 0;
+let canRoll = true;
+let hasRolled = false;
+let currentPlayerIndex = 0; // Index du joueur actuel
+
+// Lors de l'ouverture de la connexion WebSocket
+ws.onopen = () => {
+  console.log("Connecté au serveur WebSocket.", roomId);
+  ws.send(JSON.stringify({ type: "join", roomId: roomId }));
+};
+
+// Lors de la réception d'un message WebSocket
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log("Message reçu :", data); // Débogage
+
+  if (data.type === "joined") {
+    playerColor = data.color;
+    players = data.players; // Récupérer la liste des joueurs
+
+    if (!players || players.length === 0) {
+      console.error("Erreur : la liste des joueurs est vide ou non définie.");
+      alert("Erreur : impossible de récupérer la liste des joueurs. Veuillez réessayer.");
+      return;
+    }
+
+    // Placez les pions uniquement si c'est la première fois
+    if (document.querySelectorAll(".pawn").length === 0) {
+      initHorsesTableInstance();
+      placePawnsForAllPlayers();
+    }
+
+    setMenuScreen();
+  } else if (data.type === "start") {
+    resetMenuScreen(); // Masque le message "En attente d'autres joueurs"
+    setPlayerTurn(players[0]); // Commence avec le premier joueur
+    alert("Le jeu commence !");
+  } else if (data.type === "nextTurn") {
+    currentPlayerIndex = players.indexOf(data.color); // Met à jour l'index du joueur actuel
+    setPlayerTurn(data.color); // Passe au joueur suivant
+    lastDiceRoll = data.lastDiceRoll || 0; // Met à jour le dernier lancer de dé si inclus
+  } else if (data.type === "move") {
+    handleOpponentMove(data.color, data.pawnId, data.newPosition);
+  } else if (data.type === "error") {
+    alert("Erreur : " + data.message);
+    window.location.href = "../../frontend/horses/horsesRoom.html";
+  } else if (data.type === "disconnected") {
+    setMenuScreen();
+  } else if (data.type === "diceRoll") {
+    if (data.color !== playerColor) {
+      document.getElementById("dice").textContent = data.result;
+      updateDiceMessage(
+        `Le joueur ${data.color} a lancé un ${data.result}`,
+        data.color
+      );
+    }
+  } else if (data.type === "gameOver") {
+    alert(data.message);
+    setTimeout(() => {
+      window.location.href = "../../frontend/horses/horsesRoom.html";
+    }, 3000);
+  } else if (data.type === "pawnTaken") {
+    const pawn = document.getElementById(data.pawnId);
+    if (pawn) {
+      sendPawnToBase(pawn); // Renvoie le pion à la base
+    }
+  } else if (data.type === "pawnReachedCenter") {
+    const pawn = document.getElementById(data.pawnId);
+    if (pawn) {
+      pawn.remove(); // Supprime le pion du DOM
+    }
+  }
+};
+
+// Définit le joueur actuel
+function setPlayerTurn(color) {
+  currentPlayerColor = color;
+
+  // Traduire les couleurs en français
+  const colorInFrench = {
+    red: "Rouge",
+    blue: "Bleu",
+    green: "Vert",
+    yellow: "Jaune",
+  };
+
+  document.getElementById("player").textContent = `Joueur actuel : ${colorInFrench[color]}`;
+  canRoll = true;
+  hasRolled = false;
+  lastDiceRoll = 0;
+
+  // Vérifie si c'est au tour du joueur local
+  if (color === playerColor) {
+    document.getElementById("turnIndicator").classList.remove("inactive");
+  } else {
+    document.getElementById("turnIndicator").classList.add("inactive");
+  }
+}
+
+// Gère le lancer de dé
+function diceRoll() {
+  if (!canRoll || hasRolled || currentPlayerColor !== playerColor) {
+    updateDiceMessage("Ce n'est pas votre tour !", playerColor);
+    return;
+  }
+
+  canRoll = false;
+  hasRolled = true;
+
+  lastDiceRoll = Math.floor(Math.random() * 6) + 1;
+  console.log("Lancer de dé : ", lastDiceRoll);
+
+  document.getElementById("dice").textContent = lastDiceRoll;
+
+  // Afficher le résultat dans la section des dés
+  updateDiceMessage(`Vous avez lancé un ${lastDiceRoll}`, playerColor);
+
+  // Envoyer le résultat du lancer de dé au serveur
+  ws.send(
+    JSON.stringify({
+      type: "diceRoll",
+      color: playerColor,
+      result: lastDiceRoll,
+    })
+  );
+
+  const playable = getPlayablePawns(playerColor);
+
+  if (playable.length === 0) {
+    document.getElementById("turnIndicator").classList.add("inactive");
+    setTimeout(() => {
+      endTurn();
+    }, 500);
+  } else {
+    document.getElementById("turnIndicator").classList.remove("inactive");
+    updateDiceMessage("Déplace un de vos pions !", playerColor);
+  }
+}
+
+// Passe au joueur suivant
+function nextPlayer() {
+  const currentIndex = players.indexOf(currentPlayerColor);
+  const nextIndex = (currentIndex + 1) % players.length;
+  setPlayerTurn(players[nextIndex]);
+}
+
+// Gère les mouvements des pions
+function movePawn(pawn) {
+  if (!hasRolled || lastDiceRoll === 0 || pawn.dataset.color !== playerColor) {
+    alert("Tu dois d'abord lancer le dé ou ce n'est pas ton tour !");
+    return;
+  }
+
+  const playable = getPlayablePawns(playerColor);
+  if (!playable.includes(pawn)) return;
+
+  const currentPosition = parseInt(pawn.dataset.position);
+  const path = playerPaths[playerColor];
+  const newIndex = currentPosition === -1 ? 0 : currentPosition + lastDiceRoll;
+
+  if (newIndex >= path.length) {
+    alert("Ce pion ne peut pas être déplacé !");
+    return;
+  }
+
+  const targetCoord = path[newIndex];
+  const table = document.querySelector("table");
+  const targetCell = table.rows[targetCoord.i].cells[targetCoord.j];
+
+  // Vérifie les pions dans la case cible
+  const otherPawns = Array.from(targetCell.querySelectorAll(".pawn"));
+  for (let other of otherPawns) {
+    if (other.dataset.color === playerColor) {
+      alert("Un pion allié est déjà sur cette case !");
+      return;
+    } else {
+      sendPawnToBase(other); // Renvoie uniquement les pions adverses
+    }
+  }
+
+  // Déplace le pion
+  targetCell.appendChild(pawn);
+  pawn.dataset.position = newIndex;
+
+  // Vérifie si le pion atteint le dernier emplacement
+  if (newIndex === path.length - 1) {
+    alert(`Le pion ${pawn.id} a atteint la fin du chemin !`);
+    pawn.remove(); // Supprime le pion du DOM
+
+    // Notifier le serveur qu'un pion a atteint le centre
+    ws.send(
+      JSON.stringify({
+        type: "pawnReachedCenter",
+        color: playerColor,
+        pawnId: pawn.id,
+      })
+    );
+
+    checkWinCondition(playerColor); // Vérifie si tous les pions de cette couleur ont terminé
+  }
+
+  // Envoie le mouvement au serveur
+  ws.send(
+    JSON.stringify({
+      type: "move",
+      color: playerColor,
+      pawnId: pawn.id,
+      newPosition: newIndex,
+    })
+  );
+
+  handlePostMove();
+}
+
+// Gère les mouvements des adversaires
+function handleOpponentMove(color, pawnId, newPosition) {
+  const pawn = document.getElementById(pawnId);
+  const path = playerPaths[color];
+  const targetCoord = path[newPosition];
+  const table = document.querySelector("table");
+  const targetCell = table.rows[targetCoord.i].cells[targetCoord.j];
+
+  // Déplace le pion
+  targetCell.appendChild(pawn);
+  pawn.dataset.position = newPosition;
+}
+
+// Place les pions pour tous les joueurs
+function placePawnsForAllPlayers() {
+  players.forEach((color) => {
+    // Vérifiez si les pions de cette couleur existent déjà
+    const existingPawns = document.querySelectorAll(`.${color}-pawn`);
+    if (existingPawns.length > 0) {
+      console.log(`Les pions pour ${color} existent déjà. Ignoré.`);
+      return;
+    }
+
+    placePawns(color, baseCoordinates[color]);
+  });
+}
+
+// Nettoie et passe au joueur suivant après un mouvement
+function handlePostMove() {
+  if (lastDiceRoll === 6) {
+    alert("Tu as fait un 6 ! Tu peux rejouer.");
+    canRoll = true;
+    hasRolled = false;
+    lastDiceRoll = 0;
+  } else {
+    setTimeout(() => {
+      endTurn(); // Notifie le serveur que le tour est terminé
+    }, 500);
+  }
+}
+
+// Définit l'écran de menu
+function setMenuScreen() {
+  document.getElementById("waitingMessage").classList.remove("inactive");
+  document.getElementById("turnIndicator").classList.add("inactive");
+}
+
+// Réinitialise l'écran de menu
+function resetMenuScreen() {
+  document.getElementById("waitingMessage").classList.add("inactive"); // Masque le message "En attente d'autres joueurs"
+  document.getElementById("turnIndicator").classList.add("inactive"); // Masquer par défaut
+}
+
+// Ajoute les événements DOM
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("rollButton").addEventListener("click", diceRoll);
+
+  document.querySelectorAll(".pawn").forEach((pawn) => {
+    pawn.addEventListener("click", () => movePawn(pawn));
+  });
+});
+
 function getHorseTable() {
   let table = new Array(44);
   table.fill(0);
@@ -206,62 +500,26 @@ const playerPaths = {
   yellow: yellowPath,
 };
 
-// let players = ["red", "blue", "green", "yellow"];
-let players = ["red"]
-let current = 0;
-let lastDiceRoll = 0;
-let canRoll = true;
-let previous = null; // Variable pour stocker le joueur précédent
+let playerPositions = {
+  red: 0,
+  blue: 0,
+  green: 0,
+  yellow: 0,
+};
 
-function setPlayer() {
-  let playerName = players[current];
-  document.getElementById("player").textContent =
-    "Joueur actuel : " + playerName;
-  console.log("Joueur actuel : " + playerName);
-}
-
-let hasRolled = false;
-
-function diceRoll() {
-  if (!canRoll || hasRolled) return;
-
-  canRoll = false;
-  hasRolled = true;
-
-  let randomNumber = Math.floor(Math.random() * 6) + 1;
-  lastDiceRoll = randomNumber;
-  console.log("Lancer de dé : ", lastDiceRoll);
-
-  const dice = document.getElementById("dice");
-  dice.innerHTML = randomNumber;
-
-  const diceResult = document.getElementById("dice-result");
-  diceResult.textContent = "Tu as lancé : " + randomNumber;
-
-  const playable = getPlayablePawns(players[current]);
-
-  if (playable.length === 0) {
-    setTimeout(() => {
-      nextPlayer();
-    }, 500);
-  } else {
-    alert("Déplace un de tes pions !");
+function getPath(color) {
+  switch (color) {
+    case "red":
+      return redPath;
+    case "blue":
+      return bluePath;
+    case "green":
+      return greenPath;
+    case "yellow":
+      return yellowPath;
+    default:
+      return [];
   }
-}
-
-function nextPlayer() {
-  console.log(
-    `Passage au joueur suivant : ${players[current + 1]} -> ${
-      (current + 1) % players.length
-    }`
-  );
-
-  current = (current + 1) % players.length; // Passe au joueur suivant
-  setPlayer();
-
-  canRoll = true; // Permet au joueur suivant de lancer le dé
-  hasRolled = false;
-  lastDiceRoll = 0; // Réinitialiser après le passage au joueur suivant
 }
 
 // Fonction pour récupérer les pions jouables pour le joueur actuel
@@ -290,140 +548,6 @@ function getPlayablePawns(color) {
   });
 
   return playable;
-}
-
-let playerPositions = {
-  red: 0,
-  blue: 0,
-  green: 0,
-  yellow: 0,
-};
-
-function getPath(color) {
-  switch (color) {
-    case "red":
-      return redPath;
-    case "blue":
-      return bluePath;
-    case "green":
-      return greenPath;
-    case "yellow":
-      return yellowPath;
-    default:
-      return [];
-  }
-}
-
-function movePawn(pawn) {
-  if (!hasRolled || lastDiceRoll === 0) {
-    alert("Tu dois d'abord lancer le dé !");
-    return;
-  }
-
-  if (pawn.dataset.color !== players[current]) return;
-  const playable = getPlayablePawns(players[current]);
-  if (!playable.includes(pawn)) return;
-
-  try {
-    const table = document.querySelector("table");
-    const color = pawn.dataset.color;
-    const currentPosition = parseInt(pawn.dataset.position); // -1 si en base
-    const path = playerPaths[color];
-
-    const diceValue = lastDiceRoll;
-    if (!diceValue) {
-      console.log("Le dé n'a pas encore été lancé.");
-      return;
-    }
-
-    let newIndex = currentPosition === -1 ? 0 : currentPosition + diceValue;
-
-    const targetCoord = path[newIndex];
-    const targetCell = table.rows[targetCoord.i].cells[targetCoord.j];
-
-    // Vérifier les pions présents dans la case cible
-    const otherPawns = Array.from(targetCell.querySelectorAll(".pawn"));
-
-    for (let other of otherPawns) {
-      const otherColor = other.dataset.color;
-
-      if (otherColor === color) {
-        console.log("Impossible : un pion allié est déjà sur cette case.");
-        return;
-      } else {
-        console.log(`Le pion ${other.id} est mangé et retourne à la base.`);
-        sendPawnToBase(other);
-      }
-    }
-
-    // Déplacement autorisé
-    targetCell.appendChild(pawn);
-    pawn.dataset.position = newIndex;
-    pawn.classList.remove("selected");
-    pawn.classList.remove("in-base");
-
-    // Condition de victoire : vérifier si le pion atteint la case (i = 5, j = 5)
-    if (targetCoord.i === 5 && targetCoord.j === 5) {
-      alert(`Le joueur ${color.toUpperCase()} a gagné ! 🎉`);
-
-      // Désactiver tous les pions
-      document.querySelectorAll(".pawn").forEach((p) => {
-        p.onclick = null;
-      });
-
-      // Désactiver tous les boutons
-      const buttons = document.querySelectorAll("button");
-      buttons.forEach((button) => {
-        button.disabled = true;
-      });
-
-      // Rediriger vers le menu principal après un délai (par exemple, 3 secondes)
-      setTimeout(() => {
-        window.location.href =
-          "http://localhost:8081/frontend/horses/horsesRoom.html";
-      }, 3000); // 3000 ms = 3 secondes
-
-      return;
-    }
-  } catch (error) {
-    console.error("Erreur dans movePawn:", error);
-  }
-
-  // Nettoie les surbrillances après le déplacement
-  document
-    .querySelectorAll(".pawn")
-    .forEach((p) => p.classList.remove("playable"));
-  canRoll = true;
-  handlePostMove();
-}
-
-function handlePostMove() {
-  console.log(`Joueur actuel avant handlePostMove: ${players[current]}`);
-  const playable = getPlayablePawns(players[current]);
-
-  if (lastDiceRoll === 6) {
-    if (playable.length === 0) {
-      setTimeout(() => {
-        alert(
-          "Tu as fait un 6, mais aucun pion ne peut être déplacé. Tour suivant."
-        );
-        nextPlayer();
-      }, 500);
-    } else if (playable.length > 0) {
-      setTimeout(() => {
-        alert("Tu as fait un 6 ! Tu peux rejouer.");
-        canRoll = true;
-        hasRolled = false;
-        lastDiceRoll = 0;
-      });
-    }
-  } else {
-    // Passer au joueur suivant après un délai
-    setTimeout(() => {
-      console.log("Passage au joueur suivant.");
-      nextPlayer();
-    }, 500);
-  }
 }
 
 const redbase = [
@@ -459,6 +583,12 @@ const baseCoordinates = {
 };
 
 function sendPawnToBase(pawn) {
+  // Vérifie si le pion est déjà dans la base
+  if (pawn.dataset.position === "-1") {
+    console.log(`Le pion ${pawn.id} est déjà dans la base. Ignoré.`);
+    return;
+  }
+
   const table = document.querySelector("table");
   const color = pawn.dataset.color;
   const index = parseInt(pawn.dataset.index);
@@ -469,9 +599,24 @@ function sendPawnToBase(pawn) {
   targetCell.appendChild(pawn);
   pawn.dataset.position = -1; // De retour à la base
   pawn.classList.add("in-base");
+
+  // Notifier le serveur qu'un pion a été pris
+  ws.send(
+    JSON.stringify({
+      type: "pawnTaken",
+      color: color,
+      pawnId: pawn.id,
+    })
+  );
 }
 
 function placePawns(color, baseCoordinates) {
+  const existingPawns = document.querySelectorAll(`.${color}-pawn`);
+  if (existingPawns.length > 0) {
+    console.log(`Les pions pour ${color} existent déjà. Ignoré.`);
+    return;
+  }
+
   const table = document.querySelector("table");
 
   baseCoordinates.forEach((coord, index) => {
@@ -483,9 +628,9 @@ function placePawns(color, baseCoordinates) {
     pawn.id = `pawn-${color}-${index + 1}`; // ID unique pour chaque pion
 
     // Ajout des données personnalisées au pion
-    pawn.dataset.position = -1; // Position initiale (peut-être pour indiquer que le pion n'est pas encore sur le plateau)
-    pawn.dataset.color = color; // Couleur du pion (par exemple "blanc" ou "noir")
-    pawn.dataset.index = index; // Index du pion pour l'identifier de manière unique
+    pawn.dataset.position = -1; // Position initiale
+    pawn.dataset.color = color; // Couleur du pion
+    pawn.dataset.index = index; // Index du pion
 
     pawn.classList.add("in-base"); // Ajoute la classe CSS pour le positionner dans la base
 
@@ -511,28 +656,6 @@ function initHorsesTableInstance() {
   console.log("Table déjà existante.");
   return getHorseTable();
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".pawn").forEach((pawn) => {
-    pawn.addEventListener("click", () => movePawn(pawn));
-    console.log(`Pion cliqué : ${pawn.id}`);
-  });
-
-  // Affichage du joueur actuel
-  let playerName = players[current];
-  let playerElement = document.getElementById("player");
-  if (playerElement) {
-    playerElement.textContent = "Joueur actuel : " + playerName;
-  }
-
-  // Lancer de dé
-  const rollButton = document.getElementById("rollButton");
-  if (rollButton) {
-    rollButton.addEventListener("click", () => {
-      diceRoll();
-    });
-  }
-});
 
 document.addEventListener("DOMContentLoaded", function () {
   // Initialisation du plateau de jeu
@@ -714,7 +837,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const color = pawn.dataset.color;
 
       // Ne pas autoriser un joueur à jouer un pion d'une autre couleur
-      if (players[current] !== color) {
+      if (players[currentPlayerIndex] !== color) {
         alert("Ce n'est pas ton tour !");
         return;
       }
@@ -730,9 +853,47 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      movePawn(pawn); // ← position doit être définie ici
-      // Déplacer le pion
-      //setTimeout(handlePostMove, 300); // Gérer la suite du tour après un petit délai
+      movePawn(pawn); // Déplace le pion
     }
   });
 });
+
+function endTurn() {
+  ws.send(JSON.stringify({ type: "endTurn", color: playerColor }));
+}
+
+function updateDiceMessage(message, color) {
+  const colorInFrench = {
+    red: "Rouge",
+    blue: "Bleu",
+    green: "Vert",
+    yellow: "Jaune",
+  };
+
+  const diceMessage = document.getElementById("diceMessage");
+  diceMessage.textContent = `${message} (${colorInFrench[color]})`;
+  diceMessage.className = `active ${color}`; // Ajoute les classes dynamiquement
+
+  // Masquer le message après 3 secondes
+  setTimeout(() => {
+    diceMessage.className = "inactive";
+  }, 3000);
+}
+
+function checkWinCondition(color) {
+  const remainingPawns = document.querySelectorAll(`.${color}-pawn`);
+  if (remainingPawns.length === 0) {
+    alert(`Le joueur ${color} a gagné la partie !`);
+    ws.send(
+      JSON.stringify({
+        type: "win",
+        color: color,
+      })
+    );
+
+    // Redirige tous les joueurs vers la page d'accueil
+    setTimeout(() => {
+      window.location.href = "../../frontend/horses/horsesRoom.html";
+    }, 3000);
+  }
+}

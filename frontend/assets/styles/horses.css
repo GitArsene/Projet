@@ -135,9 +135,6 @@ td:hover {
     color: black;
 }
 
-
-
-
 .pawn {
     width: 30px;
     height: 30px;
@@ -190,12 +187,50 @@ td:hover {
     margin: 20px 0;
 }
 
+.dice-results {
+  margin-top: 20px;
+  text-align: center;
+}
 
+#diceMessage {
+  display: none;
+  padding: 10px;
+  margin: 10px auto;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #333;
+  border-radius: 5px;
+  width: 50%;
+  text-align: center;
+}
 
+#diceMessage.active {
+  display: block;
+}
 
+#diceMessage.red {
+  background-color: #ff4d4d;
+}
+
+#diceMessage.blue {
+  background-color: #4d79ff;
+}
+
+#diceMessage.green {
+  background-color: #4dff4d;
+}
+
+#diceMessage.yellow {
+  background-color: #ffff4d;
+}
 
 .pawn.playable {
     box-shadow: 0 0 10px 4px rgb(255, 255, 255);
     transform: scale(1.1);
     cursor: pointer;
+}
+
+.inactive{
+    display: none;
 }
