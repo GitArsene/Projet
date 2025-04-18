@@ -17,10 +17,6 @@ const PORT = process.env.PORT || 8080; // Le serveur écoute sur le port 8080 da
 app.use(express.json());
 app.use(express.static(__dirname));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
 app.get("/api/chess/hello", (req, res) => {
   res.json({ message: "Hello from chess backend!" });
 });

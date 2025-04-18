@@ -44,7 +44,7 @@ ws.onmessage = (event) => {
     );
   } else if (data.type === "error") {
     alert("Erreur : " + data.message);
-    window.location.href = "/frontend/horses/lobby.html"; // Retour au lobby en cas d'erreur
+    window.location.href = "/frontend/chess/roomsChess.html"; // Retour au lobby en cas d'erreur
   } else if (data.type === "disconnected") {
     setMenuScreen();
   } else if (data.type === "colorChanged") {

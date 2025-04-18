@@ -1,31 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../assets/styles/horses.css" />
-    <link rel="stylesheet" href="../assets/styles/styles.css" />
-    <link rel="icon" type="image/x-icon" href="../assets/libs/icons/icon.png" />
-    <title>Baby horses</title>
+    <script type="module" src="../assets/js/horses/horses.js" defer></script>
+        <link rel="icon" type="image/x-icon" href="../assets/libs/icons/icon.png" />
+
+    <title>Jeu des petits chevaux</title>
   </head>
   <body>
     <div class="game-container">
-      <h1>Les petits chevaux</h1>
-      <h2 id="player"></h2>
+      <header>
+        <h1>Les Petits Chevaux</h1>
+        <h2 id="player">Joueur actuel : En attente...</h2>
+      </header>
+
+      <!-- Messages -->
+      <div id="waitingMessage" class="inactive">
+        En attente d'autres joueurs...
+      </div>
+      <div id="turnIndicator" class="inactive">
+        C'est votre tour !
+      </div>
+
+      <!-- Contrôles du jeu -->
       <div class="dice-container">
         <div id="dice-result"></div>
         <div id="dice"></div>
-
-        <button
-          class="simple-button roll-button"
-          id="rollButton"
-          onclick="diceRoll()"
-        >
+        <button class="simple-button roll-button" id="rollButton">
           Lancer le dé
         </button>
       </div>
-      <table id="table"></table>
+      <div class="dice-results">
+        <div id="diceMessage" class="inactive"></div>
+      </div>
+
+      <!-- Plateau de jeu -->
+      <div class="board-container">
+        <table id="table">
+          <!-- Le JS remplira ce plateau dynamiquement -->
+        </table>
+      </div>
     </div>
   </body>
-  <script type="module" src="../assets/js/horses.js" defer></script>
 </html>
