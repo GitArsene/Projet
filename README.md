@@ -15,7 +15,7 @@ L'accès au différents jeux est libre, et pour ceux se jouant à plusieurs, les
 ## Instructions de déploiement :
 Deux choix sont possibles pour utiliser le site web :
 ### Utilisation directe :
-Le projet a été mis en ligne sur un serveur. Si vous souhaitez une utilisation directe, vous pouvez passer par ce lien : 
+Le projet a été mis en ligne sur un serveur. Si vous souhaitez une utilisation directe, vous pouvez passer par ce lien : http://23.88.97.248:8081/
 ### Déploiement sur votre machine :
 Le projet utilise docker pour containeriser les différentes parties du site web, vous pouvez le télécharger et l'installer depuis ce lien si ce n'est pas déjà fait : https://www.docker.com/products/docker-desktop/
 (Attention au système d'exploitation). Une fois installé, il vous sera demandé de redémarer votre machine.
