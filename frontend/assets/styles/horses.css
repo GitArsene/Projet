@@ -2,9 +2,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100vw;
-    height: 80vh;
     flex-direction: column;
+    grid-area: sidebar;
+}
+
+.board-container{
+    grid-area: main;
 }
 
 .dice-container {
@@ -13,7 +16,6 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 100vw;
 }
 
 /* Style du bouton sobre */
@@ -236,6 +238,12 @@ td:hover {
 }
 
 body {
-    display: flex;
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    grid-template-rows:  auto;
+    grid-template-areas: "sidebar main";
+    height: 100vh;
+    gap: 12px;
+    padding: 12px;
     background: #ebebeb;
 }
