@@ -234,3 +234,8 @@ td:hover {
 .inactive{
     display: none;
 }
+
+body {
+    display: flex;
+    background: #ebebeb;
+}
