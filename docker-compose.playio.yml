@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  playio-frontend:
+    image: nginx:latest
+    container_name: playio-frontend
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    expose:
+      - "80"
+    networks:
+      - reverseproxy
+
+  chess-api:
+    build:
+      context: ./backend/chess
+      dockerfile: Dockerfile
+    container_name: chess-api
+    expose:
+      - "8080"
+    networks:
+      - reverseproxy
+
+  horses-api:
+    build:
+      context: ./backend/horses
+      dockerfile: Dockerfile
+    container_name: horses-api
+    expose:
+      - "8080"
+    networks:
+      - reverseproxy
+
+networks:
+  reverseproxy:
+    external: true
